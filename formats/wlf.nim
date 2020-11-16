@@ -1,5 +1,6 @@
-import streams, times, strformat
+import streams, times
 import binaryparse
+import ../utils
 
 proc formatWinTime(ts: int64): string =
   fromWinTime(ts).format("dd/MM/yyyy HH:mm:ss:fffffffff") & " (UTC)"
@@ -32,17 +33,14 @@ createParser(fileHeader):
   u16: hotkey
   s: reserved = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
+createParser(windowsLinkFile):
+  *fileHeader: header
+
 proc print*(path: string) =
   var fs = newFileStream(path, fmRead)
   defer: fs.close()
   if not fs.isNil:
-    let x = fileHeader.get(fs)
-    echo fmt"Is unicode: {bool(x.flags.isUnicode)}"
-    echo fmt"Has icon location: {$bool(x.flags.hasIconLocation)}"
-    echo fmt"Has arguments: {$bool(x.flags.hasArguments)}"
-    echo fmt"Has working directory: {$bool(x.flags.hasWorkingDir)}"
-    echo fmt"Has relative path: {$bool(x.flags.hasRelativePath)}"
-    echo fmt"Has name: {$bool(x.flags.hasName)}"
-    echo fmt"Has link info: {$bool(x.flags.hasLinkInfo)}"
-    echo fmt"Has link target id list: {$bool(x.flags.hasLinkTargetIdList)}"
-    echo fmt"Keep local id list for unc target: {$bool(x.flags.keepLocalIdListForUncTarget)}"
+    let x = windowsLinkFile.get(fs)
+    tab("Time Creation", x.header.timeCreation.formatWinTime)
+    tab("Time Access", x.header.timeAccess.formatWinTime)
+    tab("Time Write", x.header.timeWrite.formatWinTime)
