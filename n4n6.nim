@@ -1,6 +1,25 @@
-import os
-import formats/wlf
+import os, streams, options, sequtils, strutils, strformat, terminal, times
+import parsers/wlf
 
-case paramStr(1)
+proc tab(cols: varargs[string]) =
+  echo cols.mapIt(&"{it:<20}").join(
+    ansiForegroundColorCode(fgYellow) & " | " & ansiResetCode)
+
+proc formatWinTime(ts: int64): string =
+  fromWinTime(ts).format("dd/MM/yyyy HH:mm:ss:fffffffff") & " (UTC)"
+
+let
+  tool = paramStr(1)
+  path = paramStr(2)
+
+case tool
 of "wlf":
-  wlf.print(paramStr(2))
+  var fs = newFileStream(path, fmRead)
+  defer: fs.close()
+  if not fs.isNil:
+    let x = windowsLinkFile.get(fs)
+    tab("Time Creation", x.header.timeCreation.formatWinTime)
+    tab("Time Access", x.header.timeAccess.formatWinTime)
+    tab("Time Write", x.header.timeWrite.formatWinTime)
+    if isSome(x.targetIdList):
+      tab("len_id_list", $x.targetIdList.get.len_id_list)
