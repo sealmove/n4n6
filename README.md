@@ -3,7 +3,7 @@
 
 For the most part this repo aims to be a collection of parsers/serializers for file formats of forensics value.
 
-Each module in `parsers` directory exposes a single `tuple` of a `get` and a `put` procedure. These are written in a _mostly_ declarative manner using (binaryparse)[https://github.com/PMunch/binaryparse] library.
+Each module in `parsers` directory exposes a single `tuple` of a `get` and a `put` procedure. These are written in a _mostly_ declarative manner using [binaryparse](https://github.com/PMunch/binaryparse) library.
 
 n4n6 module is currently a simple tool that takes 2 cli arguments: the format and the path of a file to analyze. The analysis is format-specific and some valuable forensics information is printed on `stdout`.
 
