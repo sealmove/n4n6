@@ -34,19 +34,7 @@ createParser(linkTargetIdList):
   lu16: lenIdList
   u8: _[lenIdList]
 
-type TargetIdListTy = Option[typeGetter(linkTargetIdList)]
-
-proc parseLinkTargetIdList(stream: Stream, cond: bool): TargetIdListTy =
-  if cond: result = some(linkTargetIdList.get(stream))
-
-proc encodeLinkTargetIdList(stream: Stream, input: var TargetIdListTy) =
-  if isSome(input):
-    linkTargetIdList.put(stream, input.get)
-
-let LinkTargetIdList = (
-  get: parseLinkTargetIdList,
-  put: encodeLinkTargetIdList
-)
+createConditionalParser(linkTargetIdList, LinkTargetIdList)
 
 createParser(LinkInfoFlags):
   6: reserved1
@@ -71,20 +59,7 @@ createParser(linkInfo):
   lu32: size
   *LinkInfoBody: linkInfoBody
 
-type LinkInfoTy = Option[typeGetter(linkInfo)]
-
-proc parseLinkInfo(stream: Stream, cond: bool): LinkInfoTy =
-  if cond:
-    result = some(linkInfo.get(stream))
-
-proc encodeLinkInfo(stream: Stream, input: var LinkInfoTy) =
-  if isSome(input):
-    linkInfo.put(stream, input.get)
-
-let LinkInfo = (
-  get: parseLinkInfo,
-  put: encodeLinkInfo
-)
+createConditionalParser(linkInfo, LinkInfo)
 
 createParser(WindowsLinkFile):
   *FileHeader: header
