@@ -1,52 +1,89 @@
 import streams, options, macros
 
-macro createConditionalParser*(input, output: untyped): untyped =
+macro createConditionalParser*(name: untyped, paramsAndDef: varargs[untyped]): untyped =
   let
-    outstr = output.strVal
-    typ = ident(outstr & "Ty")
-    parse = ident("parse" & outstr)
-    encode = ident("encode" & outstr)
+    namestr = name.strVal
+    typ = ident(namestr & "Ty")
+    parse = ident("parse" & namestr)
+    encode = ident("encode" & namestr)
+    body = paramsAndDef[^1]
+    sym = genSym()
+
+  var
+    macroInvocation = newCall(ident"createParser", sym)
+    extraParams = newSeq[NimNode]()
+    i = 0
+  while i < paramsAndDef.len - 1:
+    let p = paramsAndDef[i]
+    macroInvocation.add nnkExprColonExpr.newTree(p[0], p[1])
+    if p.kind != nnkExprColonExpr:
+      raise newException(Defect, "Extra arguments must be colon expressions")
+    extraParams.add(newIdentDefs(p[0], p[1]))
+    inc i
+
+  macroInvocation.add body
+
+  var parseParams = @[
+    typ,
+    newIdentDefs(ident"stream", ident"Stream"),
+    newIdentDefs(ident"cond", ident"bool")]
+  for p in extraParams:
+    parseParams.add p
+
+  var getCall = newCall(
+    newDotExpr(sym, ident"get"),
+    ident"stream")
+  for p in extraParams:
+    getCall.add p[0]
+
+  var encodeParams = @[
+    newEmptyNode(),
+    newIdentDefs(ident"stream", ident"Stream"),
+    newIdentDefs(ident"input", nnkVarTy.newTree(typ)),
+    newIdentDefs(ident"cond", ident"bool")]
+  for p in extraParams:
+    encodeParams.add p
+
+  var putCall = newCall(
+    newDotExpr(sym, ident"put"),
+    ident"stream",
+    newDotExpr(ident"input", ident"get"))
+  for p in extraParams:
+    putCall.add p[0]
 
   result = newStmtList(
+    macroInvocation,
     nnkTypeSection.newTree(
       nnkTypeDef.newTree(
-        ident(outstr & "Ty"),
+        ident(namestr & "Ty"),
         newEmptyNode(),
         nnkBracketExpr.newTree(
           ident"Option",
           newCall(
             ident"typeGetter",
-            input)))),
+            sym)))),
     newProc(
       parse,
-      [typ,
-       newIdentDefs(ident"stream", ident"Stream"),
-       newIdentDefs(ident"cond", ident"bool")],
+      parseParams,
       newIfStmt((
         ident"cond",
         newAssignment(
           ident"result",
           newCall(
             ident"some",
-            newCall(
-              newDotExpr(input, ident"get"),
-              ident"stream")))))),
+            getCall))))),
     newProc(
       encode,
-      [newEmptyNode(),
-       newIdentDefs(ident"stream", ident"Stream"),
-       newIdentDefs(ident"input", nnkVarTy.newTree(typ))],
+      encodeParams,
       newIfStmt((
         newCall(ident"isSome", ident"input"),
-        newCall(
-          newDotExpr(input, ident"put"),
-          ident"stream",
-          newDotExpr(ident"input", ident"get"))))),
+        putCall))),
     newLetStmt(
-      output,
+      name,
       newPar(
         newColonExpr(ident"get", parse),
         newColonExpr(ident"put", encode))))
+  echo repr result
 
 proc parseIfNotEof*[T](stream: Stream): Option[tuple[x: T]] =
   if not stream.atEnd:

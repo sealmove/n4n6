@@ -30,11 +30,9 @@ createParser(FileHeader):
   lu16: hotkey
   s: reserved = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
-createParser(linkTargetIdList):
+createConditionalParser(LinkTargetIdList):
   lu16: lenIdList
   u8: _[lenIdList]
-
-createConditionalParser(linkTargetIdList, LinkTargetIdList)
 
 createParser(LinkInfoFlags):
   6: reserved1
@@ -55,11 +53,9 @@ createParser(LinkInfoBody):
   lu32: headerSize
   *Header: header
 
-createParser(linkInfo):
+createConditionalParser(LinkInfo):
   lu32: size
   *LinkInfoBody: linkInfoBody
-
-createConditionalParser(linkInfo, LinkInfo)
 
 createParser(WindowsLinkFile):
   *FileHeader: header
