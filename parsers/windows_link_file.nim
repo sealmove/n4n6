@@ -1,8 +1,8 @@
 import streams, options
-import binaryparse
+import ../../binaryparse/binaryparse
 import utils
 
-createParser(LinkFlags):
+createParser(LinkFlags, littleEndian):
   1: isUnicode
   1: hasIconLocation
   1: hasArguments
@@ -11,50 +11,50 @@ createParser(LinkFlags):
   1: hasName
   1: hasLinkInfo
   1: hasLinkTargetIdList
-  l16: _
+  16: _
   5: reserved
   1: keepLocalIdListForUncTarget
   2: _
 
-createParser(FileHeader):
+createParser(FileHeader, littleEndian):
   s: lenHeader = "\x4c\x00\x00\x00"
   s: linkClsid = "\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46"
   *LinkFlags: flags
-  lu32: fileAttrs
-  l64: timeCreation
-  l64: timeAccess
-  l64: timeWrite
-  lu32: targetFileSize
-  l32: iconIndex
-  lu32: showCommand
-  lu16: hotkey
+  u32: fileAttrs
+  64: timeCreation
+  64: timeAccess
+  64: timeWrite
+  u32: targetFileSize
+  32: iconIndex
+  u32: showCommand
+  u16: hotkey
   s: reserved = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
 
-createConditionalParser(LinkTargetIdList):
-  lu16: lenIdList
+createConditionalParser(LinkTargetIdList, littleEndian):
+  u16: lenIdList
   u8: _[lenIdList]
 
-createParser(LinkInfoFlags):
+createParser(LinkInfoFlags, littleEndian):
   6: reserved1
   1: hasCommonNetRelLink
   1: hasVolumeIdAndLocalBasePath
-  l24: reserved2
+  24: reserved2
 
-createParser(Header):
+createParser(Header, littleEndian):
   *LinkInfoFlags: flags
-  lu32: volumeIdOfs
-  lu32: localBasePathOfs
-  lu32: commonNetRelLinkOfs
-  lu32: commonPathSuffixOfs
+  u32: volumeIdOfs
+  u32: localBasePathOfs
+  u32: commonNetRelLinkOfs
+  u32: commonPathSuffixOfs
   *UInt32IfNotEof: localBasePathOfsUnicode
   *UInt32IfNotEof: commonPathSuffixOfsUnicode
 
-createParser(LinkInfoBody):
-  lu32: headerSize
+createParser(LinkInfoBody, littleEndian):
+  u32: headerSize
   *Header: header
 
-createConditionalParser(LinkInfo):
-  lu32: size
+createConditionalParser(LinkInfo, littleEndian):
+  u32: size
   *LinkInfoBody: linkInfoBody
 
 createParser(WindowsLinkFile):

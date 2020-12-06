@@ -15,10 +15,8 @@ macro createConditionalParser*(name: untyped, paramsAndDef: varargs[untyped]): u
     i = 0
   while i < paramsAndDef.len - 1:
     let p = paramsAndDef[i]
-    macroInvocation.add nnkExprColonExpr.newTree(p[0], p[1])
-    if p.kind != nnkExprColonExpr:
-      raise newException(Defect, "Extra arguments must be colon expressions")
-    extraParams.add(newIdentDefs(p[0], p[1]))
+    macroInvocation.add p.copyNimTree
+    extraParams.add(p.copyNimTree)
     inc i
 
   macroInvocation.add body
@@ -28,13 +26,15 @@ macro createConditionalParser*(name: untyped, paramsAndDef: varargs[untyped]): u
     newIdentDefs(ident"stream", ident"Stream"),
     newIdentDefs(ident"cond", ident"bool")]
   for p in extraParams:
-    parseParams.add p
+    if p.kind == nnkExprColonExpr:
+      parseParams.add p
 
   var getCall = newCall(
     newDotExpr(sym, ident"get"),
     ident"stream")
   for p in extraParams:
-    getCall.add p[0]
+    if p.kind == nnkExprColonExpr:
+      getCall.add p[0]
 
   var encodeParams = @[
     newEmptyNode(),
@@ -42,14 +42,16 @@ macro createConditionalParser*(name: untyped, paramsAndDef: varargs[untyped]): u
     newIdentDefs(ident"input", nnkVarTy.newTree(typ)),
     newIdentDefs(ident"cond", ident"bool")]
   for p in extraParams:
-    encodeParams.add p
+    if p.kind == nnkExprColonExpr:
+      encodeParams.add p
 
   var putCall = newCall(
     newDotExpr(sym, ident"put"),
     ident"stream",
     newDotExpr(ident"input", ident"get"))
   for p in extraParams:
-    putCall.add p[0]
+    if p.kind == nnkExprColonExpr:
+      putCall.add p[0]
 
   result = newStmtList(
     macroInvocation,
