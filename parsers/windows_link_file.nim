@@ -40,7 +40,7 @@ createParser(LinkInfoFlags, littleEndian):
   1: hasVolumeIdAndLocalBasePath
   24: reserved2
 
-createParser(Header, littleEndian):
+createSizedParser(Header, littleEndian):
   *LinkInfoFlags: flags
   u32: volumeIdOfs
   u32: localBasePathOfs
@@ -51,7 +51,7 @@ createParser(Header, littleEndian):
 
 createParser(LinkInfoBody, littleEndian):
   u32: headerSize
-  *Header: header
+  *Header(int(headerSize - 4)): header
 
 createConditionalParser(LinkInfo, littleEndian):
   u32: size
