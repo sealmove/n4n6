@@ -18,8 +18,4 @@ of "wlf":
   defer: fs.close()
   if not fs.isNil:
     let x = WindowsLinkFile.get(fs)
-    tab("Time Creation", x.header.timeCreation.formatWinTime)
-    tab("Time Access", x.header.timeAccess.formatWinTime)
-    tab("Time Write", x.header.timeWrite.formatWinTime)
-    if isSome(x.targetIdList):
-      tab("len_id_list", $x.targetIdList.get.len_id_list)
+    # todo
