@@ -58,7 +58,7 @@ createParser(Header, endian = little):
   u32 {cond: not stream.atEnd}: localBasePathOfsUnicode
   u32 {cond: not stream.atEnd}: commonPathSuffixOfsUnicode
 
-createParser(LinkInfoBody, little):
+createParser(LinkInfoBody, endian = little):
   u32: headerSize
   *Header {size: headerSize - 8}: header
   *VolumeId {cond: header.flags.hasVolumeIdAndLocalBasePath,
@@ -71,7 +71,7 @@ createParser(LinkInfo, little):
   u32: size
   *LinkInfoBody {size: size - 4}: linkInfoBody
 
-createParser(StringData, little):
+createParser(StringData, endian = little):
   u16: chars
   u8: str[chars * 2]
 
