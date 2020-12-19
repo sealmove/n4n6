@@ -1,4 +1,5 @@
-import os, streams, options, sequtils, strutils, strformat, terminal, times
+import os, streams, sequtils, strutils, strformat, terminal, times
+import bitstreams
 import parsers/windows_link_file
 
 proc tab(cols: varargs[string]) =
@@ -14,8 +15,8 @@ let
 
 case tool
 of "wlf":
-  var fs = newFileStream(path, fmRead)
+  var fs = newFileBitStream(path, fmRead)
   defer: fs.close()
   if not fs.isNil:
-    let x = WindowsLinkFile.get(fs)
-    # todo
+    discard
+    #let x = ShellLinkHeader.get(fs)

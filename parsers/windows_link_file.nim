@@ -1,84 +1,44 @@
-import streams, options
-import ../../binaryparse/binaryparse
+# https://winprotocoldoc.blob.core.windows.net/productionwindowsarchives/MS-SHLLINK/%5bMS-SHLLINK%5d.pdf
 
-createParser(LinkFlags, endian = little):
-  1: isUnicode
-  1: hasIconLocation
-  1: hasArguments
-  1: hasWorkingDir
-  1: hasRelativePath
-  1: hasName
-  1: hasLinkInfo
-  1: hasLinkTargetIdList
-  16: _
-  5: reserved
-  1: keepLocalIdListForUncTarget
-  2: _
+import streams
+import binarylang, bitstreams
 
-createParser(FileHeader, endian = little):
-  s: lenHeader = "\x4c\x00\x00\x00"
-  s: linkClsid = "\x01\x14\x02\x00\x00\x00\x00\x00\xc0\x00\x00\x00\x00\x00\x00\x46"
-  *LinkFlags: flags
-  u32: fileAttrs
-  64: timeCreation
-  64: timeAccess
-  64: timeWrite
-  u32: targetFileSize
-  32: iconIndex
-  u32: showCommand
-  u16: hotkey
-  s: reserved = "\x00\x00\x00\x00\x00\x00\x00\x00\x00\x00"
+createParser(LinkFlags, bitEndian = r):
+  1: HasLinkTargetIDList
+  1: HasLinkInfo
+  1: HasName
+  1: HasRelativePath
+  1: HasWorkingDir
+  1: HasArguments
+  1: HasIconLocation
+  1: IsUnicode
+  1: ForceNoLinkInfo
+  1: HasExpString
+  1: RunInSeparateProcess
+  1: Unused1
+  1: HasDarwinID
+  1: RunAsUser
+  1: HasExpIcon
+  1: NoPidlAlias
+  1: Unused2
+  1: RunWithShimLayer
+  1: ForceNoLinkTrack
+  1: EnableTargetMetadata
+  1: DisableLinkPathTracking
+  1: DisableKnownFolderTracking
+  1: DisableKnownFolderAlias
+  1: AllowLinkToLink
+  1: UnaliasOnSave
+  1: PreferEnvironmentPath
+  1: KeepLocalIDListForUNCTarget
+  5: _
 
-createParser(LinkTargetIdList, endian = little):
-  u16: lenIdList
-  u8: _[lenIdList]
+#createParser(FileAttributesFlags)
 
-createParser(LinkInfoFlags, endian = little):
-  6: reserved1
-  1: hasCommonNetRelLink
-  1: hasVolumeIdAndLocalBasePath
-  24: reserved2
+createParser(ShellLinkHeader, endian = l):
+  u32: headerSize = 0x0000004C
+  u8: linkCLSID[16] = @[0x01'u8, 0x14, 0x02, 0x00, 0x00, 0x00, 0x00, 0x00,
+                        0xC0, 0x00, 0x00, 0x00, 0x00, 0x00, 0x00, 0x46]
+  *LinkFlags: linkFlags
 
-createParser(VolumeIdBody, endian = little):
-  u32: driveType
-  u32: driveSerialNumber
-  u32: volumeLabelOfs
-  u32 {cond: volumeLabelOfs == 0x14}: volumeLabelOfsUnicode
-
-createParser(VolumeId, endian = little):
-  u32: len
-  *VolumeIdBody {size: len - 4}: body
-
-createParser(Header, endian = little):
-  *LinkInfoFlags: flags
-  u32: volumeIdOfs
-  u32: localBasePathOfs
-  u32: commonNetRelLinkOfs
-  u32: commonPathSuffixOfs
-  u32 {cond: not stream.atEnd}: localBasePathOfsUnicode
-  u32 {cond: not stream.atEnd}: commonPathSuffixOfsUnicode
-
-createParser(LinkInfoBody, endian = little):
-  u32: headerSize
-  *Header {size: headerSize - 8}: header
-  *VolumeId {cond: header.flags.hasVolumeIdAndLocalBasePath,
-             pos: header.volumeIdOfs}: volumeId
-  u8 {cond: header.flags.hasVolumeIdAndLocalBasePath,
-      pos: header.localBasePathOfs - 4,
-      terminator: '\0'}: localBasePath[]
-
-createParser(LinkInfo, little):
-  u32: size
-  *LinkInfoBody {size: size - 4}: linkInfoBody
-
-createParser(StringData, endian = little):
-  u16: chars
-  u8: str[chars * 2]
-
-createParser(WindowsLinkFile):
-  *FileHeader: header
-  *LinkTargetIdList {cond: header.flags.hasLinkTargetIdList}: targetIdList
-  *LinkInfo {cond: header.flags.hasLinkInfo}: info
-  *StringData {cond: header.flags.hasRelativePath}: name
-
-export WindowsLinkFile
+export ShellLinkHeader
