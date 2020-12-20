@@ -1,6 +1,6 @@
-import os, streams, sequtils, strutils, strformat, terminal, times
+import os, sequtils, strutils, strformat, terminal, times
 import bitstreams
-import parsers/windows_link_file
+import parsers/windows/shelllink
 
 proc tab(cols: varargs[string]) =
   echo cols.mapIt(&"{it:<20}").join(
@@ -18,5 +18,6 @@ of "wlf":
   var fs = newFileBitStream(path, fmRead)
   defer: fs.close()
   if not fs.isNil:
-    discard
-    #let x = ShellLinkHeader.get(fs)
+    let x = ShellLink.get(fs)
+    for k, v in x.fieldPairs:
+      echo k & ": " & $v
