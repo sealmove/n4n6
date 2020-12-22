@@ -1,6 +1,11 @@
 # https://winprotocoldoc.blob.core.windows.net/productionwindowsarchives/MS-SHLLINK/%5bMS-SHLLINK%5d.pdf
 
 import binarylang, binarylang/plugins, bitstreams
+import sequtils, sets
+
+# Utilities
+proc constructSet(start, finish, step: int): HashSet[uint32] =
+  toSeq(countup(start, finish, step)).mapIt(it.uint32).toHashSet
 
 # 2.1.1 LinkFlags
 createParser(LinkFlags, bitEndian = r):
@@ -60,7 +65,8 @@ createParser(HotKeyFlags):
 # 2.1 ShellLinkHeader
 createParser(ShellLinkHeader, endian = l):
   u32: headerSize = 0x0000004C
-  s: linkClsId = "\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46"
+  s: linkClsId =
+    "\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46"
   *LinkFlags: linkFlags
   *FileAttributesFlags: fileAttributes
   u64: creationTime
@@ -89,12 +95,66 @@ createParser(LinkTargetIdList, endian = l):
   u16: idListSize
   *IdList: idList(idListSize)
 
-# 2.3.1
-createParser(VolumeId):
-  u32: volumeIdSize
+# 2.3.1 VolumeID
+createParser(VolumeId, endian = l):
+  u32 {valid: e > 0x10}: volumeIdSize
+  u32 {valid: e in {0x00..0x06}}: driveType
+  u32: driveSerialNumber
+  u32 {valid: e < volumeIdSize}: volumeLabelOffset
+  u32 {cond: volumeLabelOffset == 0x14, valid: e < volumeIdSize}:
+    volumeLabelOffsetUnicode
+  u8: data[volumeIdSize.int - p]
+
+# 2.3.2 CommonNetworkRelativeLink
+createParser(CommonNetworkRelativeLink, endian = l):
+  u32 {valid: e >= 0x14}: commonNetworkRelativeLinkSize
+  r1: validDevice
+  r1: validNetType
+  r30: _ = 0
+  u32 {valid: e < commonNetworkRelativeLinkSize}: netNameOffset
+  u32 {valid: e < commonNetworkRelativeLinkSize and (validDevice != 0 or
+    e == 0)}: deviceNameOffset
+  u32 {valid: (validNetType != 0 or e == 0) and e in
+    constructSet(0x290000, 0x430000, 0x10000)}: networkProviderType
+  u32 {cond: netNameOffset > 0x14, valid: e < commonNetworkRelativeLinkSize}:
+    netNameOffsetUnicode
+  u32 {cond: deviceNameOffset > 0x14, valid: e < commonNetworkRelativeLinkSize
+    }: deviceNameOffsetUnicode
+  s: netName
+  s: deviceName
+  s {cond: netNameOffset > 14}: netNameUnicode
+  s {cond: deviceNameOffset > 14}: deviceNameUnicode
+
+# 2.3 LinkInfo
+createParser(LinkInfo, endian = l):
+  u32: linkInfoSize
+  u32 {valid: e == 0x1C or e >= 0x24}: linkInfoHeaderSize
+  r1: volumeIdAndLocalBasePath
+  r1: commonNetworkRelativeLinkAndPathSuffix
+  r30: _ = 0
+  u32 {valid: (volumeIdAndLocalBasePath != 0 or e == 0) and e < linkInfoSize}:
+    volumeIdOffset
+  u32 {valid: (volumeIdAndLocalBasePath != 0 or e == 0) and e < linkInfoSize}:
+    localBasePathOffset
+  u32 {valid: commonNetworkRelativeLinkAndPathSuffix != 0 or e == 0}:
+    commonNetworkRelativeLinkOffset
+  u32: commonPathSuffixOffset
+  u32 {cond: linkInfoHeaderSize >= 0x24, valid: volumeIdAndLocalBasePath !=
+    0 or e == 0}: localBasePathOffsetUnicode
+  u32 {cond: linkInfoHeaderSize >= 0x24}: commonPathSuffixOffsetUnicode
+  *VolumeId {cond: volumeIdAndLocalBasePath.bool}: volumeId
+  s {cond: volumeIdAndLocalBasePath.bool}: localBasePath
+  *CommonNetworkRelativeLink {cond: commonNetworkRelativeLinkAndPathSuffix.bool
+    }: commonNetworkRelativeLink
+  s: commonPathSuffix
+  s {cond: volumeIdAndLocalBasePath.bool and linkInfoHeaderSize >= 0x24}:
+    localBasePathUnicode
+  s {cond: linkInfoHeaderSize >= 0x24}: commonPathSuffixUnicode
 
 createParser(ShellLink):
   *ShellLinkHeader: shellLinkHeader
-  *LinkTargetIdList {cond: shellLinkHeader.linkFlags.hasLinkTargetIdList.bool}: linkTargetIdList
+  *LinkTargetIdList {cond: shellLinkHeader.linkFlags.hasLinkTargetIdList.bool}:
+    linkTargetIdList
+  *LinkInfo {cond: shellLinkHeader.linkFlags.hasLinkInfo.bool}: linkInfo
 
 export ShellLink
