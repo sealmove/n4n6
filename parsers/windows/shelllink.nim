@@ -1,7 +1,6 @@
 # https://winprotocoldoc.blob.core.windows.net/productionwindowsarchives/MS-SHLLINK/%5bMS-SHLLINK%5d.pdf
 
-import binarylang, bitstreams
-import options
+import binarylang, binarylang/plugins, bitstreams
 
 # 2.1.1 LinkFlags
 createParser(LinkFlags, bitEndian = r):
@@ -86,19 +85,12 @@ createParser(IdList):
   u16: terminalId = 0
 
 # 2.2 LinkTargetIDList
-createParser(LinkTargetIdList):
+createParser(LinkTargetIdList, endian = l):
   u16: idListSize
   *IdList: idList(idListSize)
 
-type OptionalLinkTargetIdListTy = Option[typeGetter(LinkTargetIdList)]
-proc OptionalLinkTargetIdListGet(s: BitStream, cond: bool): OptionalLinkTargetIdListTy =
-  if cond: result = some(LinkTargetIdList.get(s))
-proc OptionalLinkTargetIdListPut(s: BitStream, input: OptionalLinkTargetIdListTy, cond: bool) =
-  if isSome(input): LinkTargetIdList.put(s, get(input))
-let OptionalLinkTargetIdList = (get: OptionalLinkTargetIdListGet, put: OptionalLinkTargetIdListPut)
-
 createParser(ShellLink):
   *ShellLinkHeader: shellLinkHeader
-  *OptionalLinkTargetIdList(shellLinkHeader.linkFlags.hasLinkTargetIdList.bool): linkTargetIdList
+  *LinkTargetIdList {cond: shellLinkHeader.linkFlags.hasLinkTargetIdList.bool}: linkTargetIdList
 
 export ShellLink
