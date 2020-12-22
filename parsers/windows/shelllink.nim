@@ -54,8 +54,8 @@ createParser(FileAttributesFlags, bitEndian = r):
 
 # 2.1.3 HotKeyFlags
 createParser(HotKeyFlags):
-  u8: lowByte
-  u8: highByte
+  u8 {valid: e in {0x00, 0x30..0x5A, 0x70..0x91}}: lowByte
+  u8 {valid: e in {0x00, 0x01, 0x02, 0x04}}: highByte
 
 # 2.1 ShellLinkHeader
 createParser(ShellLinkHeader, endian = l):
@@ -88,6 +88,10 @@ createParser(IdList):
 createParser(LinkTargetIdList, endian = l):
   u16: idListSize
   *IdList: idList(idListSize)
+
+# 2.3.1
+createParser(VolumeId):
+  u32: volumeIdSize
 
 createParser(ShellLink):
   *ShellLinkHeader: shellLinkHeader
