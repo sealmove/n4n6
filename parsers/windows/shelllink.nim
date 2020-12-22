@@ -151,10 +151,23 @@ createParser(LinkInfo, endian = l):
     localBasePathUnicode
   s {cond: linkInfoHeaderSize >= 0x24}: commonPathSuffixUnicode
 
+# 2.4 StringData
+createParser(StringData, endian = l):
+  u16: countCharacters
+  u8: str[countCharacters]
+
 createParser(ShellLink):
   *ShellLinkHeader: shellLinkHeader
   *LinkTargetIdList {cond: shellLinkHeader.linkFlags.hasLinkTargetIdList.bool}:
     linkTargetIdList
   *LinkInfo {cond: shellLinkHeader.linkFlags.hasLinkInfo.bool}: linkInfo
+  *StringData {cond: shellLinkHeader.linkFlags.hasName.bool}: nameString
+  *StringData {cond: shellLinkHeader.linkFlags.hasRelativePath.bool}:
+    relativePath
+  *StringData {cond: shellLinkHeader.linkFlags.hasWorkingDir.bool}: workingDir
+  *StringData {cond: shellLinkHeader.linkFlags.hasArguments.bool}:
+    commandLineArguments
+  *StringData {cond: shellLinkHeader.linkFlags.hasIconLocation.bool}:
+    iconLocation
 
 export ShellLink
