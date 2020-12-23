@@ -1,5 +1,6 @@
 # https://winprotocoldoc.blob.core.windows.net/productionwindowsarchives/MS-SHLLINK/%5bMS-SHLLINK%5d.pdf
 
+import shellitems
 import binarylang, binarylang/plugins, bitstreams
 import sequtils, sets
 
@@ -38,25 +39,6 @@ createParser(LinkFlags, bitEndian = r):
   1: keepLocalIdListForUNCTarget
   5: _
 
-# 2.1.2 FileAttributesFlags
-createParser(FileAttributesFlags, bitEndian = r):
-  1: readonly
-  1: hidden
-  1: system
-  1: reserved1 = 0
-  1: directory
-  1: archive
-  1: reserved2 = 0
-  1: normal
-  1: temporary
-  1: sparseFile
-  1: reparsePoint
-  1: compressed
-  1: offline
-  1: notContentIndexed
-  1: encrypted
-  17: _
-
 # 2.1.3 HotKeyFlags
 createParser(HotKeyFlags):
   u8 {valid: e in {0x00, 0x30..0x5A, 0x70..0x91}}: lowByte
@@ -69,9 +51,9 @@ createParser(ShellLinkHeader, endian = l):
     "\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46"
   *LinkFlags: linkFlags
   *FileAttributesFlags: fileAttributes
-  u64: creationTime
-  u64: accessTime
-  u64: writeTime
+  64: creationTime
+  64: accessTime
+  64: writeTime
   u32: fileSize
   u32: iconIndex
   u32: showCommand

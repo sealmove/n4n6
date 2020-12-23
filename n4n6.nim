@@ -3,7 +3,7 @@ import bitstreams
 import parsers/windows/shelllink
 
 proc tab(cols: varargs[string]) =
-  echo cols.mapIt(&"{it:<20}").join(
+  echo cols.mapIt(&"{it:<30}").join(
     ansiForegroundColorCode(fgYellow) & " | " & ansiResetCode)
 
 proc formatWinTime(ts: int64): string =
@@ -37,5 +37,11 @@ of "wlf":
   defer: fs.close()
   if not fs.isNil:
     let x = ShellLink.get(fs)
-    tab("Linked Path", x.linkInfo.linkInfoData.localBasePath &
-                       x.linkInfo.linkInfoData.commonPathSuffix)
+    if x.linkInfo.linkInfoData.linkInfoHeader.volumeIdAndLocalBasePath.bool:
+      tab("Linked Path", x.linkInfo.linkInfoData.localBasePath &
+                        x.linkInfo.linkInfoData.commonPathSuffix)
+    if x.shellLinkHeader.linkFlags.hasArguments.bool:
+      tab("Arguments", $x.commandLineArguments.str.mapIt(it.Rune))
+    tab("Created", x.shellLinkHeader.creationTime.formatWinTime)
+    tab("Last Accessed", x.shellLinkHeader.accessTime.formatWinTime)
+    tab("Last Modified", x.shellLinkHeader.writeTime.formatWinTime)
