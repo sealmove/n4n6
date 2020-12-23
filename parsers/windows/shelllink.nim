@@ -112,49 +112,72 @@ createParser(CommonNetworkRelativeLink, endian = l):
   r1: validNetType
   r30: _ = 0
   u32 {valid: e < commonNetworkRelativeLinkSize}: netNameOffset
-  u32 {valid: e < commonNetworkRelativeLinkSize and (validDevice != 0 or
-    e == 0)}: deviceNameOffset
-  u32 {valid: (validNetType != 0 or e == 0) and e in
-    constructSet(0x290000, 0x430000, 0x10000)}: networkProviderType
+  u32 {
+    valid: e < commonNetworkRelativeLinkSize and (validDevice != 0 or e == 0)
+  }: deviceNameOffset
+  u32 {
+    valid: (validNetType != 0 or e == 0) and e in
+           constructSet(0x290000, 0x430000, 0x10000)
+  }: networkProviderType
   u32 {cond: netNameOffset > 0x14, valid: e < commonNetworkRelativeLinkSize}:
     netNameOffsetUnicode
-  u32 {cond: deviceNameOffset > 0x14, valid: e < commonNetworkRelativeLinkSize
-    }: deviceNameOffsetUnicode
+  u32 {
+    cond: deviceNameOffset > 0x14,
+    valid: e < commonNetworkRelativeLinkSize
+  }: deviceNameOffsetUnicode
   s: netName
   s: deviceName
-  s {cond: netNameOffset > 14}: netNameUnicode
-  s {cond: deviceNameOffset > 14}: deviceNameUnicode
+  s16 {cond: netNameOffset > 14}: netNameUnicode
+  s16 {cond: deviceNameOffset > 14}: deviceNameUnicode
 
 # 2.3 LinkInfo
-createParser(LinkInfo, endian = l):
-  u32: linkInfoSize
-  u32 {valid: e == 0x1C or e >= 0x24}: linkInfoHeaderSize
+createParser(LinkInfoHeader, endian = l, size: uint32, headerSize: uint32):
   r1: volumeIdAndLocalBasePath
   r1: commonNetworkRelativeLinkAndPathSuffix
   r30: _ = 0
-  u32 {valid: (volumeIdAndLocalBasePath != 0 or e == 0) and e < linkInfoSize}:
+  u32 {valid: (volumeIdAndLocalBasePath != 0 or e == 0) and e < size}:
     volumeIdOffset
-  u32 {valid: (volumeIdAndLocalBasePath != 0 or e == 0) and e < linkInfoSize}:
+  u32 {valid: (volumeIdAndLocalBasePath != 0 or e == 0) and e < size}:
     localBasePathOffset
   u32 {valid: commonNetworkRelativeLinkAndPathSuffix != 0 or e == 0}:
     commonNetworkRelativeLinkOffset
   u32: commonPathSuffixOffset
-  u32 {cond: linkInfoHeaderSize >= 0x24, valid: volumeIdAndLocalBasePath !=
-    0 or e == 0}: localBasePathOffsetUnicode
-  u32 {cond: linkInfoHeaderSize >= 0x24}: commonPathSuffixOffsetUnicode
-  *VolumeId {cond: volumeIdAndLocalBasePath.bool}: volumeId
-  s {cond: volumeIdAndLocalBasePath.bool}: localBasePath
-  *CommonNetworkRelativeLink {cond: commonNetworkRelativeLinkAndPathSuffix.bool
-    }: commonNetworkRelativeLink
+  u32 {
+    cond: headerSize >= 0x24,
+    valid: volumeIdAndLocalBasePath != 0 or e == 0
+  }: localBasePathOffsetUnicode
+  u32 {cond: headerSize >= 0x24}: commonPathSuffixOffsetUnicode
+
+createParser(LinkInfoData, endian = l, size: uint32):
+  u32 {valid: e == 0x1C or e >= 0x24}: linkInfoHeaderSize
+  *LinkInfoHeader(size, linkInfoHeaderSize):
+    linkInfoHeader(linkInfoHeaderSize - 8)
+  *VolumeId {
+    condPos: (linkInfoHeader.volumeIdAndLocalBasePath.bool,
+              linkInfoHeader.volumeIdOffset.int - 4)
+  }: volumeId
+  s {
+    condPos: (linkInfoHeader.volumeIdAndLocalBasePath.bool,
+              linkInfoHeader.localBasePathOffset.int - 4)
+  }: localBasePath
+  *CommonNetworkRelativeLink {
+    cond: linkInfoHeader.commonNetworkRelativeLinkAndPathSuffix.bool
+  }: commonNetworkRelativeLink
   s: commonPathSuffix
-  s {cond: volumeIdAndLocalBasePath.bool and linkInfoHeaderSize >= 0x24}:
-    localBasePathUnicode
-  s {cond: linkInfoHeaderSize >= 0x24}: commonPathSuffixUnicode
+  u16 {
+    cond: linkInfoHeader.volumeIdAndLocalBasePath.bool and
+          linkInfoHeaderSize >= 0x24
+  }: localBasePathUnicode{e == 0}
+  u16 {cond: linkInfoHeaderSize >= 0x24}: commonPathSuffixUnicode{e == 0}
+
+createParser(LinkInfo, endian = l):
+  u32: linkInfoSize
+  *LinkInfoData(linkInfoSize): linkInfoData(linkInfoSize - 4)
 
 # 2.4 StringData
 createParser(StringData, endian = l):
   u16: countCharacters
-  u8: str[countCharacters]
+  u16: str[countCharacters]
 
 createParser(ShellLink):
   *ShellLinkHeader: shellLinkHeader

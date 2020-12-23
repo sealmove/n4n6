@@ -1,4 +1,4 @@
-import os, sequtils, strutils, strformat, terminal, times
+import os, sequtils, strutils, strformat, terminal, times, unicode
 import bitstreams
 import parsers/windows/shelllink
 
@@ -37,4 +37,5 @@ of "wlf":
   defer: fs.close()
   if not fs.isNil:
     let x = ShellLink.get(fs)
-    echoData(x)
+    tab("Linked Path", x.linkInfo.linkInfoData.localBasePath &
+                       x.linkInfo.linkInfoData.commonPathSuffix)
