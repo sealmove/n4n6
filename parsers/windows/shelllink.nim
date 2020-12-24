@@ -1,6 +1,6 @@
 # https://winprotocoldoc.blob.core.windows.net/productionwindowsarchives/MS-SHLLINK/%5bMS-SHLLINK%5d.pdf
 
-import shellitems
+import shellitem
 import binarylang, binarylang/plugins, bitstreams
 import sequtils, sets
 
@@ -62,14 +62,9 @@ createParser(ShellLinkHeader, endian = l):
   32: reserved2 = 0
   32: reserved3 = 0
 
-# 2.2.2 ItemID
-createParser(ItemId, endian = l):
-  u16: itemIdSize
-  u8: data[itemIdSize - 2]
-
 # 2.2.1 IDList
 createParser(IdList):
-  *ItemId: {itemIdList}
+  *ShellItem: {itemIdList}
   u16: terminalId = 0
 
 # 2.2 LinkTargetIDList
