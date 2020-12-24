@@ -48,6 +48,17 @@ createParser(ClsId):
   bu16: part4
   u8: part5[6]
 
+type SortIndex* = enum
+  siInternetExplorer = (0x00, "Internet Explorer")
+  siLibraries = (0x42, "Libraries")
+  siUsers = (0x44, "Users")
+  siMyDocuments = (0x48, "My Documents")
+  siMyComputer = (0x50, "My Computer")
+  siNetwork = (0x58, "Network")
+  siRecycleBin = (0x60, "Recycle Bin")
+  siInternetExplorer2 = (0x68, "Internet Explorer")
+  siMyGames = (0x80, "My Games")
+
 # 3.2 Root folder shell item
 createParser(RootFolderShellItem):
   u8: sortIndex
