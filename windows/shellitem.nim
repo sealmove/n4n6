@@ -92,7 +92,7 @@ proc shellItemGet(s: BitStream, code: byte): ShellItemTy =
   of 0x30: result.fileEntry = FileEntryShellItem.get(s, code)
   else: discard
 proc shellItemPut(s: BitStream, input: ShellItemTy, code: byte) =
-  case code
+  case input.code
   of 0x10: RootFolderShellItem.put(s, input.rootFolder)
   of 0x20: VolumeShellItem.put(s, input.volume, code)
   of 0x30: FileEntryShellItem.put(s, input.fileEntry, code)
