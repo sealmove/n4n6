@@ -1,7 +1,7 @@
 import os, streams, json, strutils
 import json_serialization, bitstreams
 from binarylang import typeGetter
-import windows/shelllink
+import windows/[shelllink, prefetch]
 
 let
   op = paramStr(1)
@@ -17,12 +17,14 @@ if "encode".startsWith(op):
   defer:
     close(bs)
     close(s)
+  let json = parseJson(s.readAll)
   case parser
   of "winshelllink":
-    let
-      json = parseJson(s.readAll)
-      x = json.to(typeGetter(ShellLink))
+    let x = json.to(typeGetter(ShellLink))
     ShellLink.put(bs, x)
+  of "winprefetch":
+    let x = json.to(typeGetter(Prefetch))
+    Prefetch.put(bs, x)
 elif "decode".startsWith(op):
   var
     bs = newFileBitStream(subject, fmRead)
@@ -33,4 +35,7 @@ elif "decode".startsWith(op):
   case parser
   of "winshelllink":
     let x = ShellLink.get(bs)
+    s.write(x.toJson(pretty = true))
+  of "winprefetch":
+    let x = Prefetch.get(bs)
     s.write(x.toJson(pretty = true))

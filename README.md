@@ -7,6 +7,7 @@ Collection of parsers written in [binarylang](https://github.com/sealmove/binary
 - Windows
   - Shell Link (Shortcut)
   - Shell Item (Shellbag)
+  - Prefetch
 
 ### CLI
 Syntax:
@@ -25,3 +26,4 @@ Supported formats:
 
 Aliases:
 - winshelllink
+- winprefetch
