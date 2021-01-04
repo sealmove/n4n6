@@ -104,8 +104,8 @@ createParser(CommonNetworkRelativeLink, endian = l):
   }: deviceNameOffsetUnicode
   s: netName
   s: deviceName
-  s16 {cond: netNameOffset > 14}: netNameUnicode
-  s16 {cond: deviceNameOffset > 14}: deviceNameUnicode
+  u16 {cond: netNameOffset > 14}: netNameUnicode
+  u16 {cond: deviceNameOffset > 14}: deviceNameUnicode
 
 # 2.3 LinkInfo
 createParser(LinkInfoHeader, endian = l, size: uint32, headerSize: uint32):

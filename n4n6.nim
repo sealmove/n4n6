@@ -1,16 +1,32 @@
-import os, streams, json, strutils
+import os, streams, json, strutils, sequtils
 import json_serialization, bitstreams
 from binarylang import typeGetter
-import windows/[shelllink, prefetch]
+import parsers/windows/[shelllink, prefetch]
 
 let
   op = paramStr(1)
-  format = paramStr(2)
-  parser = paramStr(3)
-  subject = paramStr(4)
-  io = paramStr(5)
+  parser = paramStr(2)
+  subject = paramStr(3)
+  io = paramStr(4)
 
-if "encode".startsWith(op):
+if "decode".startsWith(op):
+  var
+    bs = newFileBitStream(subject, fmRead)
+    s = newFileStream(io, fmWrite)
+  defer:
+    close(bs)
+    close(s)
+  case parser
+  of "winshelllink":
+    let x = ShellLink.get(bs)
+    s.write(x.toJson(pretty = true))
+  of "winprefetch":
+    let
+      mam = Mam.get(bs)
+      uncompressed = newStringBitStream(mam.data.mapIt(it.char).join)
+      x = Prefetch.get(uncompressed)
+    s.write(x.toJson(pretty = true))
+elif "encode".startsWith(op):
   var
     bs = newFileBitStream(subject, fmReadWrite)
     s = newFileStream(io, fmRead)
@@ -25,17 +41,3 @@ if "encode".startsWith(op):
   of "winprefetch":
     let x = json.to(typeGetter(Prefetch))
     Prefetch.put(bs, x)
-elif "decode".startsWith(op):
-  var
-    bs = newFileBitStream(subject, fmRead)
-    s = newFileStream(io, fmWrite)
-  defer:
-    close(bs)
-    close(s)
-  case parser
-  of "winshelllink":
-    let x = ShellLink.get(bs)
-    s.write(x.toJson(pretty = true))
-  of "winprefetch":
-    let x = Prefetch.get(bs)
-    s.write(x.toJson(pretty = true))
