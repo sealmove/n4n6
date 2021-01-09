@@ -41,8 +41,8 @@ createParser(FileInfo17, endian = l):
   u32: fileMetricsEntries
   u32: traceChainsOfs
   u32: traceChainsEntries
-  u32: filenameOfs
-  u32: filenameSize
+  u32: filenameStringsOfs
+  u32: filenameStringsSize
   u32: volumesOfs
   u32: volumesEntries
   u32: volumesSize
@@ -56,8 +56,8 @@ createParser(FileInfo23, endian = l):
   u32: fileMetricsEntries
   u32: traceChainsOfs
   u32: traceChainsEntries
-  u32: filenameOfs
-  u32: filenameSize
+  u32: filenameStringsOfs
+  u32: filenameStringsSize
   u32: volumesOfs
   u32: volumesEntries
   u32: volumesSize
@@ -73,8 +73,8 @@ createParser(FileInfo26, endian = l):
   u32: fileMetricsEntries
   u32: traceChainsOfs
   u32: traceChainsEntries
-  u32: filenameOfs
-  u32: filenameSize
+  u32: filenameStringsOfs
+  u32: filenameStringsSize
   u32: volumesOfs
   u32: volumesEntries
   u32: volumesSize
@@ -91,8 +91,8 @@ createParser(FileInfo30, endian = l):
   u32: fileMetricsEntries
   u32: traceChainsOfs
   u32: traceChainsEntries
-  u32: filenameOfs
-  u32: filenameSize
+  u32: filenameStringsOfs
+  u32: filenameStringsSize
   u32: volumesOfs
   u32: volumesEntries
   u32: volumesSize
@@ -128,9 +128,71 @@ proc fileInfoPut(s: BitStream, input: FileInfoTy, version: uint32) =
   else: discard
 let FileInfo = (get: fileInfoGet, put: fileInfoPut)
 
+# 4.3 File metrics array
+createParser(FileMetrics17, endian = l):
+  u32: unknown1
+  u32: unknown2
+  u32: filenameStringsOfs
+  u32: filenameStringsChars
+  u32: unknown3
+
+createParser(FileMetrics23, endian = l):
+  u32: unknown1
+  u32: unknown2
+  u32: unknown3
+  u32: filenameStringsOfs
+  u32: filenameStringsChars
+  u32: unknown4
+  u64: fileRef
+
+type FileMetricsTy* = ref object
+  case version*: PrefetchVersion
+  of pv17: fileMetrics17*: typeGetter(FileMetrics17)
+  else: fileMetrics23*: typeGetter(FileMetrics23)
+proc fileMetricsGet(s: BitStream, version: uint32): FileMetricsTy =
+  result = FileMetricsTy(version: version.PrefetchVersion)
+  case version
+  of 17: result.fileMetrics17 = FileMetrics17.get(s)
+  else: result.fileMetrics23 = FileMetrics23.get(s)
+proc fileMetricsPut(s: BitStream, input: FileMetricsTy, version: uint32) =
+  case input.version
+  of pv17: FileMetrics17.put(s, input.fileMetrics17)
+  else: FileMetrics23.put(s, input.fileMetrics23)
+let FileMetrics = (get: fileMetricsGet, put: fileMetricsPut)
+
+createParser(TraceChains17, endian = l):
+  u32: nextIndex
+  u32: blocksLoaded
+  u8: unknown1
+  u8: unknown2
+  u16: unknown3
+
+createParser(TraceChains30, endian = l):
+  u32: blocksLoaded
+  u8: unknown1
+  u8: unknown2
+  u16: unknown3
+
+type TraceChainsTy* = ref object
+  case version*: PrefetchVersion
+  of pv17: traceChains17*: typeGetter(TraceChains17)
+  else: traceChains30*: typeGetter(TraceChains30)
+proc traceChainsGet(s: BitStream, version: uint32): TraceChainsTy =
+  result = TraceChainsTy(version: version.PrefetchVersion)
+  case version
+  of 17: result.traceChains17 = TraceChains17.get(s)
+  else: result.traceChains30 = TraceChains30.get(s)
+proc traceChainsPut(s: BitStream, input: TraceChainsTy, version: uint32) =
+  case input.version
+  of pv17: TraceChains17.put(s, input.traceChains17)
+  else: TraceChains30.put(s, input.traceChains30)
+let TraceChains = (get: traceChainsGet, put: traceChainsPut)
+
 # 4 Uncompressed Prefetch file
 createParser(Prefetch, endian = l):
   *Header: header
   *FileInfo(header.version): fileInfo
+  *FileMetrics(header.version): fileMetrics
+  *TraceChains(header.version): traceChains
 
 export Mam, Prefetch
