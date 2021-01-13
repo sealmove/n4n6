@@ -1,7 +1,7 @@
 # https://github.com/libyal/libscca/blob/main/documentation/Windows%20Prefetch%20File%20(PF)%20format.asciidoc
 
 import sequtils, strutils
-import binarylang, bitstreams, lz77
+import binarylang, binarylang/plugins, bitstreams, lz77
 
 type PrefetchVersion* = enum
   pvNA = (0, "NA")
@@ -127,16 +127,44 @@ proc fileInfoPut(s: BitStream, input: FileInfoTy, version: uint32) =
   of pv30: FileInfo30.put(s, input.fileInfo30)
   else: discard
 let FileInfo = (get: fileInfoGet, put: fileInfoPut)
+proc fileMetricsOfs*(o: FileInfoTy): uint32 =
+  case o.version
+  of pv17: result = o.fileInfo17.fileMetricsOfs
+  of pv23: result = o.fileInfo23.fileMetricsOfs
+  of pv26: result = o.fileInfo26.fileMetricsOfs
+  of pv30: result = o.fileInfo30.fileMetricsOfs
+  else: discard
+proc fileMetricsEntries*(o: FileInfoTy): uint32 =
+  case o.version
+  of pv17: result = o.fileInfo17.fileMetricsEntries
+  of pv23: result = o.fileInfo23.fileMetricsEntries
+  of pv26: result = o.fileInfo26.fileMetricsEntries
+  of pv30: result = o.fileInfo30.fileMetricsEntries
+  else: discard
+proc traceChainsOfs*(o: FileInfoTy): uint32 =
+  case o.version
+  of pv17: result = o.fileInfo17.traceChainsOfs
+  of pv23: result = o.fileInfo23.traceChainsOfs
+  of pv26: result = o.fileInfo26.traceChainsOfs
+  of pv30: result = o.fileInfo30.traceChainsOfs
+  else: discard
+proc traceChainsEntries*(o: FileInfoTy): uint32 =
+  case o.version
+  of pv17: result = o.fileInfo17.traceChainsEntries
+  of pv23: result = o.fileInfo23.traceChainsEntries
+  of pv26: result = o.fileInfo26.traceChainsEntries
+  of pv30: result = o.fileInfo30.traceChainsEntries
+  else: discard
 
 # 4.3 File metrics array
-createParser(FileMetrics17, endian = l):
+createParser(FileMetric17, endian = l):
   u32: unknown1
   u32: unknown2
   u32: filenameStringsOfs
   u32: filenameStringsChars
   u32: unknown3
 
-createParser(FileMetrics23, endian = l):
+createParser(FileMetric23, endian = l):
   u32: unknown1
   u32: unknown2
   u32: unknown3
@@ -145,54 +173,60 @@ createParser(FileMetrics23, endian = l):
   u32: unknown4
   u64: fileRef
 
-type FileMetricsTy* = ref object
+type FileMetricTy* = ref object
   case version*: PrefetchVersion
-  of pv17: fileMetrics17*: typeGetter(FileMetrics17)
-  else: fileMetrics23*: typeGetter(FileMetrics23)
-proc fileMetricsGet(s: BitStream, version: uint32): FileMetricsTy =
-  result = FileMetricsTy(version: version.PrefetchVersion)
+  of pv17: fileMetric17*: typeGetter(FileMetric17)
+  else: fileMetric23*: typeGetter(FileMetric23)
+proc fileMetricGet(s: BitStream, version: uint32): FileMetricTy =
+  result = FileMetricTy(version: version.PrefetchVersion)
   case version
-  of 17: result.fileMetrics17 = FileMetrics17.get(s)
-  else: result.fileMetrics23 = FileMetrics23.get(s)
-proc fileMetricsPut(s: BitStream, input: FileMetricsTy, version: uint32) =
+  of 17: result.fileMetric17 = FileMetric17.get(s)
+  else: result.fileMetric23 = FileMetric23.get(s)
+proc fileMetricPut(s: BitStream, input: FileMetricTy, version: uint32) =
   case input.version
-  of pv17: FileMetrics17.put(s, input.fileMetrics17)
-  else: FileMetrics23.put(s, input.fileMetrics23)
-let FileMetrics = (get: fileMetricsGet, put: fileMetricsPut)
+  of pv17: FileMetric17.put(s, input.fileMetric17)
+  else: FileMetric23.put(s, input.fileMetric23)
+let FileMetric = (get: fileMetricGet, put: fileMetricPut)
 
-createParser(TraceChains17, endian = l):
+# 4.4 Trace chains array
+createParser(TraceChain17, endian = l):
   u32: nextIndex
   u32: blocksLoaded
   u8: unknown1
   u8: unknown2
   u16: unknown3
 
-createParser(TraceChains30, endian = l):
+createParser(TraceChain30, endian = l):
   u32: blocksLoaded
   u8: unknown1
   u8: unknown2
   u16: unknown3
 
-type TraceChainsTy* = ref object
+type TraceChainTy* = ref object
   case version*: PrefetchVersion
-  of pv17: traceChains17*: typeGetter(TraceChains17)
-  else: traceChains30*: typeGetter(TraceChains30)
-proc traceChainsGet(s: BitStream, version: uint32): TraceChainsTy =
-  result = TraceChainsTy(version: version.PrefetchVersion)
+  of pv17: traceChain17*: typeGetter(TraceChain17)
+  else: traceChain30*: typeGetter(TraceChain30)
+proc traceChainGet(s: BitStream, version: uint32): TraceChainTy =
+  result = TraceChainTy(version: version.PrefetchVersion)
   case version
-  of 17: result.traceChains17 = TraceChains17.get(s)
-  else: result.traceChains30 = TraceChains30.get(s)
-proc traceChainsPut(s: BitStream, input: TraceChainsTy, version: uint32) =
+  of 17: result.traceChain17 = TraceChain17.get(s)
+  else: result.traceChain30 = TraceChain30.get(s)
+proc traceChainPut(s: BitStream, input: TraceChainTy, version: uint32) =
   case input.version
-  of pv17: TraceChains17.put(s, input.traceChains17)
-  else: TraceChains30.put(s, input.traceChains30)
-let TraceChains = (get: traceChainsGet, put: traceChainsPut)
+  of pv17: TraceChain17.put(s, input.traceChain17)
+  else: TraceChain30.put(s, input.traceChain30)
+let TraceChain = (get: traceChainGet, put: traceChainPut)
+
+# 4.5 Filename strings
+
 
 # 4 Uncompressed Prefetch file
 createParser(Prefetch, endian = l):
   *Header: header
   *FileInfo(header.version): fileInfo
-  *FileMetrics(header.version): fileMetrics
-  *TraceChains(header.version): traceChains
+  *FileMetric(header.version) {pos: fileInfo.fileMetricsOfs.int}:
+    fileMetrics[fileInfo.fileMetricsEntries]
+  *TraceChain(header.version) {pos: fileInfo.traceChainsOfs.int}:
+    traceChains[fileInfo.traceChainsEntries]
 
 export Mam, Prefetch
