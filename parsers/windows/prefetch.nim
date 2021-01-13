@@ -155,6 +155,20 @@ proc traceChainsEntries*(o: FileInfoTy): uint32 =
   of pv26: result = o.fileInfo26.traceChainsEntries
   of pv30: result = o.fileInfo30.traceChainsEntries
   else: discard
+proc filenameStringsOfs*(o: FileInfoTy): uint32 =
+  case o.version
+  of pv17: result = o.fileInfo17.filenameStringsOfs
+  of pv23: result = o.fileInfo23.filenameStringsOfs
+  of pv26: result = o.fileInfo26.filenameStringsOfs
+  of pv30: result = o.fileInfo30.filenameStringsOfs
+  else: discard
+proc filenameStringsSize*(o: FileInfoTy): uint32 =
+  case o.version
+  of pv17: result = o.fileInfo17.filenameStringsSize
+  of pv23: result = o.fileInfo23.filenameStringsSize
+  of pv26: result = o.fileInfo26.filenameStringsSize
+  of pv30: result = o.fileInfo30.filenameStringsSize
+  else: discard
 
 # 4.3 File metrics array
 createParser(FileMetric17, endian = l):
@@ -218,7 +232,11 @@ proc traceChainPut(s: BitStream, input: TraceChainTy, version: uint32) =
 let TraceChain = (get: traceChainGet, put: traceChainPut)
 
 # 4.5 Filename strings
+createParser(FilenameString, endian = l):
+  u16: str{e == 0 or s.atEnd}
 
+createParser(FilenameStrings):
+  *FilenameString: strs{s.atEnd}
 
 # 4 Uncompressed Prefetch file
 createParser(Prefetch, endian = l):
@@ -228,5 +246,7 @@ createParser(Prefetch, endian = l):
     fileMetrics[fileInfo.fileMetricsEntries]
   *TraceChain(header.version) {pos: fileInfo.traceChainsOfs.int}:
     traceChains[fileInfo.traceChainsEntries]
+  *FilenameStrings {pos: fileInfo.filenameStringsOfs.int}:
+    filenameStrings(fileInfo.filenameStringsSize.int)
 
 export Mam, Prefetch
