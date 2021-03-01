@@ -1,7 +1,7 @@
 import os, streams, json, strutils, sequtils
 import json_serialization, bitstreams
 from binarylang import typeGetter
-import parsers/windows/[shelllink, prefetch]
+import parsers/windows/[shelllink, prefetch, pe]
 
 let
   op = paramStr(1)
@@ -26,6 +26,9 @@ if "decode".startsWith(op):
       uncompressed = newStringBitStream(mam.data.mapIt(it.char).join)
       x = Prefetch.get(uncompressed)
     s.write(x.toJson(pretty = true))
+  of "winpe":
+    let x = Pe.get(bs)
+    s.write(x.toJson(pretty = true))
 elif "encode".startsWith(op):
   var
     bs = newFileBitStream(subject, fmReadWrite)
@@ -38,6 +41,9 @@ elif "encode".startsWith(op):
   of "winshelllink":
     let x = json.to(typeGetter(ShellLink))
     ShellLink.put(bs, x)
-  of "winprefetch":
+  of "winprefetch": # TODO: compress to MAM
     let x = json.to(typeGetter(Prefetch))
     Prefetch.put(bs, x)
+  of "winpe":
+    let x = json.to(typeGetter(Pe))
+    Pe.put(bs, x)
