@@ -32,3 +32,7 @@ n4n6 decode winshelllink myNewShortcut.lnk in.json
 Aliases:
 - winshelllink
 - winprefetch
+- winpe
+
+### Note
+The transformation step is not yet implemented, therefore the json output comes directely from the parser.
