@@ -78,30 +78,15 @@ createParser(FileEntryShellItem, endian = l, clsTypeId: byte):
   u16 {cond: (clsTypeId and 0x04) == 1}: primaryNameUnicode{e == 0}
 
 # 2.1 Shell Item
-type ShellItemTy* = ref object
-  case code*: byte
-  of 0x10: rootFolder*: typeGetter(RootFolderShellItem)
-  of 0x20: volume*: typeGetter(VolumeShellItem)
-  of 0x30: fileEntry*: typeGetter(FileEntryShellItem)
-  else: discard
-proc shellItemGet(s: BitStream, code: byte): ShellItemTy =
-  result = ShellItemTy(code: code)
-  case code
-  of 0x10: result.rootFolder = RootFolderShellItem.get(s)
-  of 0x20: result.volume = VolumeShellItem.get(s, code)
-  of 0x30: result.fileEntry = FileEntryShellItem.get(s, code)
-  else: discard
-proc shellItemPut(s: BitStream, input: ShellItemTy, code: byte) =
-  case input.code
-  of 0x10: RootFolderShellItem.put(s, input.rootFolder)
-  of 0x20: VolumeShellItem.put(s, input.volume, code)
-  of 0x30: FileEntryShellItem.put(s, input.fileEntry, code)
-  else: discard
-let ShellItemData = (get: shellItemGet, put: shellItemPut)
+createVariantParser(ShellItemData, ShellItemTy, *code: byte):
+  (0x10): *RootFolderShellItem: *rootFolder
+  (0x20): *VolumeShellItem(code): *volume
+  (0x30): *FileEntryShellItem(code): *fileEntry
+  _: nil
 
 createParser(ShellItem, endian = l):
   u16: size
   u8: clsTypeId
   *ShellItemData(clsTypeId and 0x70): data(size - 3)
 
-export FileAttributesFlags, ClsId, FatTime, ShellItem
+export FileAttributesFlags, ClsId, FatTime, ShellItemTy, ShellItem

@@ -104,29 +104,13 @@ createParser(FileInfo30, endian = l):
   u32: unknown4
   u8: unknown5[88]
 
-type FileInfoTy* = ref object
-  case version*: PrefetchVersion
-  of pv17: fileInfo17*: typeGetter(FileInfo17)
-  of pv23: fileInfo23*: typeGetter(FileInfo23)
-  of pv26: fileInfo26*: typeGetter(FileInfo26)
-  of pv30: fileInfo30*: typeGetter(FileInfo30)
-  else: discard
-proc fileInfoGet(s: BitStream, version: uint32): FileInfoTy =
-  result = FileInfoTy(version: version.PrefetchVersion)
-  case version
-  of 17: result.fileInfo17 = FileInfo17.get(s)
-  of 23: result.fileInfo23 = FileInfo23.get(s)
-  of 26: result.fileInfo26 = FileInfo26.get(s)
-  of 30: result.fileInfo30 = FileInfo30.get(s)
-  else: discard
-proc fileInfoPut(s: BitStream, input: FileInfoTy, version: uint32) =
-  case input.version
-  of pv17: FileInfo17.put(s, input.fileInfo17)
-  of pv23: FileInfo23.put(s, input.fileInfo23)
-  of pv26: FileInfo26.put(s, input.fileInfo26)
-  of pv30: FileInfo30.put(s, input.fileInfo30)
-  else: discard
-let FileInfo = (get: fileInfoGet, put: fileInfoPut)
+createVariantParser(FileInfo, FileInfoTy, version: PrefetchVersion):
+  (pv17): *FileInfo17: *fileInfo17
+  (pv23): *FileInfo23: *fileInfo23
+  (pv26): *FileInfo26: *fileInfo26
+  (pv30): *FileInfo30: *fileInfo30
+  _: nil
+
 proc fileMetricsOfs*(o: FileInfoTy): uint32 =
   case o.version
   of pv17: result = o.fileInfo17.fileMetricsOfs
@@ -187,20 +171,9 @@ createParser(FileMetric23, endian = l):
   u32: unknown4
   u64: fileRef
 
-type FileMetricTy* = ref object
-  case version*: PrefetchVersion
-  of pv17: fileMetric17*: typeGetter(FileMetric17)
-  else: fileMetric23*: typeGetter(FileMetric23)
-proc fileMetricGet(s: BitStream, version: uint32): FileMetricTy =
-  result = FileMetricTy(version: version.PrefetchVersion)
-  case version
-  of 17: result.fileMetric17 = FileMetric17.get(s)
-  else: result.fileMetric23 = FileMetric23.get(s)
-proc fileMetricPut(s: BitStream, input: FileMetricTy, version: uint32) =
-  case input.version
-  of pv17: FileMetric17.put(s, input.fileMetric17)
-  else: FileMetric23.put(s, input.fileMetric23)
-let FileMetric = (get: fileMetricGet, put: fileMetricPut)
+createVariantParser(FileMetric, FileMetricTy, version: PrefetchVersion):
+  (pv17): *FileMetric17: fileMetric17
+  _: *FileMetric23: fileMetric23
 
 # 4.4 Trace chains array
 createParser(TraceChain17, endian = l):
@@ -216,20 +189,9 @@ createParser(TraceChain30, endian = l):
   u8: unknown2
   u16: unknown3
 
-type TraceChainTy* = ref object
-  case version*: PrefetchVersion
-  of pv17: traceChain17*: typeGetter(TraceChain17)
-  else: traceChain30*: typeGetter(TraceChain30)
-proc traceChainGet(s: BitStream, version: uint32): TraceChainTy =
-  result = TraceChainTy(version: version.PrefetchVersion)
-  case version
-  of 17: result.traceChain17 = TraceChain17.get(s)
-  else: result.traceChain30 = TraceChain30.get(s)
-proc traceChainPut(s: BitStream, input: TraceChainTy, version: uint32) =
-  case input.version
-  of pv17: TraceChain17.put(s, input.traceChain17)
-  else: TraceChain30.put(s, input.traceChain30)
-let TraceChain = (get: traceChainGet, put: traceChainPut)
+createVariantParser(TraceChain, TraceChainTy, version: PrefetchVersion):
+  (pv17): *TraceChain17: traceChain17
+  _: *TraceChain30: traceChain30
 
 # 4.5 Filename strings
 createParser(FilenameString, endian = l):
@@ -241,10 +203,10 @@ createParser(FilenameStrings):
 # 4 Uncompressed Prefetch file
 createParser(Prefetch, endian = l):
   *Header: header
-  *FileInfo(header.version): fileInfo
-  *FileMetric(header.version) {pos: fileInfo.fileMetricsOfs.int}:
+  *FileInfo(header.version.PrefetchVersion): fileInfo
+  *FileMetric(header.version.PrefetchVersion) {pos: fileInfo.fileMetricsOfs.int}:
     fileMetrics[fileInfo.fileMetricsEntries]
-  *TraceChain(header.version) {pos: fileInfo.traceChainsOfs.int}:
+  *TraceChain(header.version.PrefetchVersion) {pos: fileInfo.traceChainsOfs.int}:
     traceChains[fileInfo.traceChainsEntries]
   *FilenameStrings {pos: fileInfo.filenameStringsOfs.int}:
     filenameStrings(fileInfo.filenameStringsSize.int)

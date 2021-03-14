@@ -72,15 +72,18 @@ createParser(LinkTargetIdList, endian = l):
   u16: idListSize
   *IdList: idList(idListSize)
 
+createParser(VolumeIdData, endian = l):
+  u32 {valid: e in {0x00..0x06}}: driveType
+  u32: driveSerialNumber
+  u32: volumeLabelOffset
+  u32 {cond: volumeLabelOffset == 0x14}:
+    volumeLabelOffsetUnicode
+  u8: data{s.atEnd}
+
 # 2.3.1 VolumeID
 createParser(VolumeId, endian = l):
   u32 {valid: e > 0x10}: volumeIdSize
-  u32 {valid: e in {0x00..0x06}}: driveType
-  u32: driveSerialNumber
-  u32 {valid: e < volumeIdSize}: volumeLabelOffset
-  u32 {cond: volumeLabelOffset == 0x14, valid: e < volumeIdSize}:
-    volumeLabelOffsetUnicode
-  u8: data[volumeIdSize.int - p]
+  *VolumeIdData: data(volumeIdSize - 4)
 
 # 2.3.2 CommonNetworkRelativeLink
 createParser(CommonNetworkRelativeLink, endian = l):

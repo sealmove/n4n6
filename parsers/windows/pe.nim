@@ -3,7 +3,7 @@
 import binarylang, binarylang/plugins, bitstreams
 
 createParser(DosHeader, endian = l):
-  s: signature = "MZ"
+  s: _ = "MZ"
   u16: lastSize
   u16: nBlocks
   u16: nReloc
@@ -99,23 +99,10 @@ type PeFormat = enum
   pfPe32 = (0x10b, "PE32")
   pfPe32Plus = (0x20b, "PE32+")
 
-type OptionalHeaderWindowsSpecificTy* = ref object
-  case code*: PeFormat
-  of pfPe32: optionalHeaderWindowsSpecificPe32*: typeGetter(OptionalHeaderWindowsSpecificPe32)
-  of pfPe32Plus: optionalHeaderWindowsSpecificPe32Plus*: typeGetter(OptionalHeaderWindowsSpecificPe32Plus)
-  else: discard
-proc OptionalHeaderWindowsSpecificGet(s: BitStream, code: PeFormat): OptionalHeaderWindowsSpecificTy =
-  result = OptionalHeaderWindowsSpecificTy(code: code)
-  case code
-  of pfPe32: result.optionalHeaderWindowsSpecificPe32 = OptionalHeaderWindowsSpecificPe32.get(s)
-  of pfPe32Plus: result.optionalHeaderWindowsSpecificPe32Plus = OptionalHeaderWindowsSpecificPe32Plus.get(s)
-  else: discard
-proc OptionalHeaderWindowsSpecificPut(s: BitStream, input: OptionalHeaderWindowsSpecificTy, code: PeFormat) =
-  case input.code
-  of pfPe32: OptionalHeaderWindowsSpecificPe32.put(s, input.optionalHeaderWindowsSpecificPe32)
-  of pfPe32Plus: OptionalHeaderWindowsSpecificPe32Plus.put(s, input.optionalHeaderWindowsSpecificPe32Plus)
-  else: discard
-let OptionalHeaderWindowsSpecific = (get: OptionalHeaderWindowsSpecificGet, put: OptionalHeaderWindowsSpecificPut)
+createVariantParser(OptionalHeaderWindowsSpecific, OptionalHeaderWindowsSpecificTy, code: PeFormat):
+  (pfPe32): *OptionalHeaderWindowsSpecificPe32: optionalHeaderWindowsSpecificPe32
+  (pfPe32Plus): *OptionalHeaderWindowsSpecificPe32Plus: optionalHeaderWindowsSpecificPe32Plus
+  _: nil
 
 createParser(DataDirectory, endian = l):
   u32: virtualAddress
@@ -145,7 +132,7 @@ createParser(OptionalHeader, endian = l):
   *DataDirectories: dataDirectories
 
 createParser(Section, endian = l):
-  u64: name
+  u8: name[8]
   u32: virtualSize
   u32: virtualAddress
   u32: sizeOfRawData
@@ -158,7 +145,7 @@ createParser(Section, endian = l):
   u8 {pos: int(pointerToRawData)}: rawData[sizeOfRawData]
 
 createParser(PeHeader, endian = l):
-  s: signature = "PE\x00\x00"
+  s: _ = "PE\x00\x00"
   *CoffHeader: coffHeader
   *OptionalHeader {cond: coffHeader.sizeOfOptionalHeader > 0}: optionalHeader(coffHeader.sizeOfOptionalHeader)
   *Section: sections[coffHeader.numberOfSections]
