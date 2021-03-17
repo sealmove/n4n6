@@ -99,7 +99,7 @@ createVariantParser(ChunkData, ChunkTy, typ: ChunkKind, color: ColorKind):
     s: compressedTextKeyword
     u8: ctCompressionMethod
     u8: compressedText{s.atEnd}
-  _: nil
+  (ckIend): nil
 
 createParser(Chunk, color: ColorKind):
   u32: len
@@ -108,7 +108,7 @@ createParser(Chunk, color: ColorKind):
   u8: crc[4]
 
 createParser(Png):
-  s: _ = "\x89\x50\x4E\x47.PNG"
+  s: _ = "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"
   s: _ = "\0\0\0\r"
   s: _ = "IHDR"
   *IhdrChuck: ihdr
