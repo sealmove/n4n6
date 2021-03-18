@@ -1,4 +1,4 @@
-import binarylang, bitstreams, strutils
+import binarylang, binarylang/plugins, bitstreams, strutils
 
 createParser(IhdrChuck):
   u32: width
@@ -27,6 +27,7 @@ type
     ckIdat = "IDAT"
     ckChrm = "cHRM"
     ckGama = "gAMA"
+    ckIccp = "iCCP"
     ckSrgb = "sRGB"
     ckBkgd = "bKGD"
     ckPhys = "pHYs"
@@ -69,6 +70,10 @@ createVariantParser(ChunkData, ChunkTy, typ: ChunkKind, color: ColorKind):
     *Point: *bluePoint
   (ckGama):
     u32: *gammaInt
+  (ckIccp):
+    s {valid: e.len < 80}: profileName
+    u8: compressionMethod
+    u8: compressedProfile{s.atEnd}
   (ckSrgb):
     u8: *renderIntent
   (ckBkgd):
