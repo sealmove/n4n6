@@ -9,7 +9,7 @@ createParser(IhdrChuck):
   u8: filterMethod
   u8: interlaceMethod
 
-createParser(Pixel):
+createParser(Rgb):
   u8: r
   u8: g
   u8: b
@@ -19,10 +19,10 @@ createParser(Point):
   u32: y
 
 createParser(PlteChuck):
-  *Pixel: pixels{s.atEnd}
+  *Rgb: pixels{s.atEnd}
 
 type
-  ChunkKind = enum
+  ChunkKind* = enum
     ckPlte = "PLTE"
     ckIdat = "IDAT"
     ckChrm = "cHRM"
@@ -35,70 +35,68 @@ type
     ckText = "tEXt"
     ckCompressedText = "zTXt"
     ckIend = "IEND"
-  ColorKind = enum
+  ColorKind* = enum
     ckGreyscale = 0
     ckTruecolor = 2
     ckIndexed = 3
     ckGreyscaleAlpha = 4
     ckTruecolorAlpha = 6
-#[
-  PhysUnitKind = enum
+  PhysUnitKind* = enum
     pukUnknown
     pukMeter
-  CompressionMethodKind = enum
+  CompressionMethodKind* = enum
     cmkZlib
-]#
 
 createVariantParser(Bkgd, BkgdTy, color: ColorKind):
   (ckGreyscale, ckGreyscaleAlpha):
-    u16: greyscale
+    u16: *greyscale
   (ckTruecolor, ckTruecolorAlpha):
-    u16: red
-    u16: green
-    u16: blue
+    u16: *red
+    u16: *green
+    u16: *blue
   (ckIndexed):
-    u8: paletteIndex
+    u8: *paletteIndex
 
 createVariantParser(ChunkData, ChunkTy, typ: ChunkKind, color: ColorKind):
   (ckPlte):
-    *Pixel: entries{s.atEnd}
+    *Rgb: *entries{s.atEnd}
   (ckIdat):
-    u8: idat{s.atEnd}
+    u8: *idat{s.atEnd}
   (ckChrm):
-    *Point: whitePoint
-    *Point: redPoint
-    *Point: greenPoint
-    *Point: bluePoint           
+    *Point: *whitePoint
+    *Point: *redPoint
+    *Point: *greenPoint
+    *Point: *bluePoint
   (ckGama):
-    u32: gammaInt
+    u32: *gammaInt
   (ckSrgb):
-    u8: renderIntent
+    u8: *renderIntent
   (ckBkgd):
-    *Bkgd(color): bkgd
+    *Bkgd(color): *bkgd
   (ckPhys):
-    u32: pixelsPerUnitX
-    u32: pixelsPerUnitY
-    u8: unit
+    u32: *pixelsPerUnitX
+    u32: *pixelsPerUnitY
+    u8: *unit
   (ckTime):
-    u16: year
-    u8: month
-    u8: day
-    u8: minute
-    u8: second
+    u16: *year
+    u8: *month
+    u8: *day
+    u8: *minute
+    u8: *second
   (ckInternationalText):
-    s: itKeyword
-    u8: compressionFlag
-    u8: itCompressionMethod
-    s: languageTag
-    s: translatedKeyword
-    s: internationalText
+    s: *itKeyword
+    u8: *compressionFlag
+    u8: *itCompressionMethod
+    s: *languageTag
+    s: *translatedKeyword
+    s: *internationalText
   (ckText):
-    s: textKeyword
-    s: text
+    s: *textKeyword
+    s: *text
   (ckCompressedText):
-    s: compressedTextKeyword
-    u8: ctCompressionMethod
-    u8: compressedText{s.atEnd}
+    s: *compressedTextKeyword
+    u8: *ctCompressionMethod
+    u8: *compressedText{s.atEnd}
   (ckIend): nil
 
 createParser(Chunk, color: ColorKind):
@@ -116,4 +114,6 @@ createParser(Png):
   *Chunk(ihdr.colorKind.ColorKind):
     chunks{e.typ == "IEND" or s.atEnd}
 
-export Png
+export
+  Png, Chunk, IhdrChuck, Rgb, Point, PlteChuck, Bkgd, BkgdTy, ChunkData,
+  ChunkTy
