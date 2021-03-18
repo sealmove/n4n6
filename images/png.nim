@@ -1,26 +1,5 @@
 import binarylang, binarylang/plugins, bitstreams, strutils
 
-createParser(IhdrChuck):
-  u32: width
-  u32: height
-  u8: bitDepth
-  u8: colorKind
-  u8: compressionMethod
-  u8: filterMethod
-  u8: interlaceMethod
-
-createParser(Rgb):
-  u8: r
-  u8: g
-  u8: b
-
-createParser(Point):
-  u32: x
-  u32: y
-
-createParser(PlteChuck):
-  *Rgb: pixels{s.atEnd}
-
 type
   ChunkKind* = enum
     ckPlte = "PLTE"
@@ -47,6 +26,27 @@ type
     pukMeter
   CompressionMethodKind* = enum
     cmkZlib
+
+createParser(IhdrChuck):
+  u32: width
+  u32: height
+  u8: bitDepth
+  u8: colorKind
+  u8: compressionMethod
+  u8: filterMethod
+  u8: interlaceMethod
+
+createParser(Rgb):
+  u8: r
+  u8: g
+  u8: b
+
+createParser(Point):
+  u32: x
+  u32: y
+
+createParser(PlteChuck):
+  *Rgb: pixels{s.atEnd}
 
 createVariantParser(Bkgd, BkgdTy, color: ColorKind):
   (ckGreyscale, ckGreyscaleAlpha):
