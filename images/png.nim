@@ -48,7 +48,7 @@ createParser(Point):
 createParser(PlteChuck):
   *Rgb: pixels{s.atEnd}
 
-createVariantParser(Bkgd, BkgdTy, color: ColorKind):
+createVariantParser(Bkgd, BkgdTy, *color: ColorKind):
   (ckGreyscale, ckGreyscaleAlpha):
     u16: *greyscale
   (ckTruecolor, ckTruecolorAlpha):
@@ -58,7 +58,7 @@ createVariantParser(Bkgd, BkgdTy, color: ColorKind):
   (ckIndexed):
     u8: *paletteIndex
 
-createVariantParser(ChunkData, ChunkTy, typ: ChunkKind, color: ColorKind):
+createVariantParser(ChunkData, ChunkTy, *typ: ChunkKind, color: ColorKind):
   (ckPlte):
     *Rgb: *entries{s.atEnd}
   (ckIdat):
