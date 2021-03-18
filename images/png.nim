@@ -108,14 +108,14 @@ createParser(Chunk, color: ColorKind):
   u32: len
   s: typ(4)
   *ChunkData(parseEnum[ChunkKind](typ), color): body(len)
-  u8: crc[4]
+  u32: crc
 
 createParser(Png):
   s: _ = "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"
   s: _ = "\0\0\0\r"
   s: _ = "IHDR"
   *IhdrChuck: ihdr
-  u8: ihdrCrc[4]
+  u32: ihdrCrc
   *Chunk(ihdr.colorKind.ColorKind):
     chunks{e.typ == "IEND" or s.atEnd}
 
