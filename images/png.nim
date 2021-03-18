@@ -1,4 +1,6 @@
-import binarylang, binarylang/plugins, bitstreams, strutils
+import strutils, strformat
+import bitstreams
+import binarylang, binarylang/plugins
 
 type
   ChunkKind* = enum
@@ -118,6 +120,22 @@ createParser(Png):
   u32: ihdrCrc
   *Chunk(ihdr.colorKind.ColorKind):
     chunks{e.typ == "IEND" or s.atEnd}
+
+proc bytesPerPixel*(image: typeGetter(Png)): int =
+  ## Should only be called for images with a bit depth that is a byte multiple
+  let depth = image.ihdr.bitDepth
+  if depth mod 8 != 0:
+    stderr.write(&"bit depth: {depth}, not a byte multiple")
+    quit(QuitFailure)
+  let bytesPerSample = int(depth div 8)
+  let samplesPerPixer =
+    case ColorKind(image.ihdr.colorKind)
+    of ckGreyscale: 1
+    of ckTruecolor: 3
+    of ckIndexed: 1
+    of ckGreyscaleAlpha: 2
+    of ckTruecolorAlpha: 4
+  bytesPerSample * samplesPerPixer
 
 export
   Png, Chunk, IhdrChuck, Rgb, Point, PlteChuck, Bkgd, BkgdTy, ChunkData,
