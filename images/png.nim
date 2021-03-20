@@ -72,7 +72,7 @@ createVariantParser(ChunkData, ChunkTy, *typ: ChunkKind, color: ColorKind):
   (ckGama):
     u32: *gammaInt
   (ckIccp):
-    s {valid: e.len < 80}: profileName
+    s {valid: _.len < 80}: profileName
     u8: compressionMethod
     u8: compressedProfile{s.atEnd}
   (ckSrgb):
@@ -118,7 +118,7 @@ createParser(Png):
   *IhdrChuck: ihdr
   u32: ihdrCrc
   *Chunk(ihdr.colorKind.ColorKind):
-    chunks{e.typ == "IEND" or s.atEnd}
+    chunks{_.typ == "IEND" or s.atEnd}
 
 proc bytesPerPixel*(image: typeGetter(Png)): int =
   ## Should only be called for images with a bit depth that is a byte multiple

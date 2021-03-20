@@ -75,7 +75,7 @@ createParser(FileEntryShellItem, endian = l, clsTypeId: byte):
   *FatTime: writeTime
   *FileAttributesFlagsLow: fileAttributeFlags
   s {cond: (clsTypeId and 0x04) == 0}: primaryName
-  u16 {cond: (clsTypeId and 0x04) == 1}: primaryNameUnicode{e == 0}
+  u16 {cond: (clsTypeId and 0x04) == 1}: primaryNameUnicode{_ == 0}
 
 # 2.1 Shell Item
 createVariantParser(ShellItemData, ShellItemTy, *code: byte):

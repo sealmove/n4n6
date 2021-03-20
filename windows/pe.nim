@@ -23,8 +23,6 @@ createParser(DosHeader, endian = l):
   u8: reserved2[20]
   u32: peOfs
 
-# createParser(CoffSymbol, endian = l):
-
 # COFF File Header (Object and Image)
 createParser(CoffHeader, endian = l):
   u16: machine
@@ -34,11 +32,9 @@ createParser(CoffHeader, endian = l):
   u32: numberOfSymbols
   u16: sizeOfOptionalHeader
   u16: characteristics
-#  u32 {pos: int(pointerToSymbolTable + numberOfSymbols * 18)}: symbolNameTableSize
-#  *CoffSymbol {pos: int(pointerToSymbolTable)}: symbolTable[numberOfSymbols]
 
 createParser(OptionalHeaderStd, endian = l):
-  u16 {valid: e in {0x10b, 0x20b, 0x107}}: magic
+  u16 {valid: _ in {0x10b, 0x20b, 0x107}}: magic
   u8: majorLinkVersion
   u8: minorLinkVersion
   u32: sizeOfCode
@@ -124,7 +120,7 @@ createParser(DataDirectories, endian = l):
   *DataDirectory: iat
   *DataDirectory: delayImportDescriptor
   *DataDirectory: clrRuntimeHeader
-  *DataDirectory {valid: e.virtualAddress == 0 and e.size == 0}: reserved
+  *DataDirectory {valid: _.virtualAddress == 0 and _.size == 0}: reserved
 
 createParser(OptionalHeader, endian = l):
   *OptionalHeaderStd: standardFields

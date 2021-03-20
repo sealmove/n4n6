@@ -195,7 +195,7 @@ createVariantParser(TraceChain, TraceChainTy, version: PrefetchVersion):
 
 # 4.5 Filename strings
 createParser(FilenameString, endian = l):
-  u16: str{e == 0 or s.atEnd}
+  u16: str{_ == 0 or s.atEnd}
 
 createParser(FilenameStrings):
   *FilenameString: strs{s.atEnd}
