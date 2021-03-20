@@ -1,5 +1,4 @@
 import strutils, strformat
-import bitstreams
 import binarylang, binarylang/plugins
 
 type

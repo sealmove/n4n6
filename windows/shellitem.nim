@@ -1,6 +1,6 @@
 # https://github.com/libyal/libfwsi/blob/main/documentation/Windows%20Shell%20Item%20format.asciidoc
 
-import binarylang, binarylang/plugins, bitstreams
+import binarylang, binarylang/plugins
 
 createParser(FileAttributesFlagsLow, bitEndian = r):
   1: readonly

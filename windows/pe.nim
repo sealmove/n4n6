@@ -1,6 +1,6 @@
 # https://docs.microsoft.com/en-us/windows/win32/debug/pe-format
 
-import binarylang, binarylang/plugins, bitstreams
+import binarylang, binarylang/plugins
 
 createParser(DosHeader, endian = l):
   s: _ = "MZ"

@@ -1,7 +1,7 @@
 # https://github.com/libyal/libscca/blob/main/documentation/Windows%20Prefetch%20File%20(PF)%20format.asciidoc
 
 import sequtils, strutils
-import binarylang, binarylang/plugins, bitstreams, lz77
+import binarylang, binarylang/plugins, lz77
 
 type PrefetchVersion* = enum
   pvNA = (0, "NA")

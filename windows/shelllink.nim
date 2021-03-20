@@ -1,7 +1,7 @@
 # https://winprotocoldoc.blob.core.windows.net/productionwindowsarchives/MS-SHLLINK/%5bMS-SHLLINK%5d.pdf
 
 import shellitem
-import binarylang, binarylang/plugins, bitstreams
+import binarylang, binarylang/plugins
 import sequtils, sets
 
 # Utilities
