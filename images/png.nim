@@ -28,7 +28,7 @@ type
   CompressionMethodKind* = enum
     cmkZlib
 
-createParser(IhdrChuck):
+createParser(ihdrChuck):
   u32: width
   u32: height
   u8: bitDepth
@@ -37,19 +37,19 @@ createParser(IhdrChuck):
   u8: filterMethod
   u8: interlaceMethod
 
-createParser(Rgb):
+createParser(rgb):
   u8: r
   u8: g
   u8: b
 
-createParser(Point):
+createParser(point):
   u32: x
   u32: y
 
-createParser(PlteChuck):
-  *Rgb: pixels{s.atEnd}
+createParser(plteChuck):
+  *rgb: pixels{s.atEnd}
 
-createVariantParser(Bkgd, BkgdTy, *color: ColorKind):
+createVariantParser(bkgd, *color: ColorKind):
   (ckGreyscale, ckGreyscaleAlpha):
     u16: *greyscale
   (ckTruecolor, ckTruecolorAlpha):
@@ -59,16 +59,16 @@ createVariantParser(Bkgd, BkgdTy, *color: ColorKind):
   (ckIndexed):
     u8: *paletteIndex
 
-createVariantParser(ChunkData, ChunkTy, *typ: ChunkKind, color: ColorKind):
+createVariantParser(chunkData, *typ: ChunkKind, color: ColorKind):
   (ckPlte):
-    *Rgb: *entries{s.atEnd}
+    *rgb: *entries{s.atEnd}
   (ckIdat):
     u8: *idat{s.atEnd}
   (ckChrm):
-    *Point: *whitePoint
-    *Point: *redPoint
-    *Point: *greenPoint
-    *Point: *bluePoint
+    *point: *whitePoint
+    *point: *redPoint
+    *point: *greenPoint
+    *point: *bluePoint
   (ckGama):
     u32: *gammaInt
   (ckIccp):
@@ -78,7 +78,7 @@ createVariantParser(ChunkData, ChunkTy, *typ: ChunkKind, color: ColorKind):
   (ckSrgb):
     u8: *renderIntent
   (ckBkgd):
-    *Bkgd(color): *bkgd
+    *bkgd(color): *bkgd
   (ckPhys):
     u32: *pixelsPerUnitX
     u32: *pixelsPerUnitY
@@ -105,22 +105,21 @@ createVariantParser(ChunkData, ChunkTy, *typ: ChunkKind, color: ColorKind):
     u8: *compressedText{s.atEnd}
   (ckIend): nil
 
-createParser(Chunk, color: ColorKind):
+createParser(chunk, color: ColorKind):
   u32: len
   s: typ(4)
-  *ChunkData(parseEnum[ChunkKind](typ), color): body(len)
+  *chunkData(parseEnum[ChunkKind](typ), color): body(len)
   u32: crc
 
-createParser(Png):
+createParser(png):
   s: _ = "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"
   s: _ = "\0\0\0\r"
   s: _ = "IHDR"
-  *IhdrChuck: ihdr
+  *ihdrChuck: ihdr
   u32: ihdrCrc
-  *Chunk(ihdr.colorKind.ColorKind):
-    chunks{_.typ == "IEND" or s.atEnd}
+  *chunk(ihdr.colorKind.ColorKind): chunks{_.typ == "IEND" or s.atEnd}
 
-proc bytesPerPixel*(image: typeGetter(Png)): int =
+proc bytesPerPixel*(image: Png): int =
   ## Should only be called for images with a bit depth that is a byte multiple
   let depth = image.ihdr.bitDepth
   if depth mod 8 != 0:
@@ -135,7 +134,3 @@ proc bytesPerPixel*(image: typeGetter(Png)): int =
     of ckGreyscaleAlpha: 2
     of ckTruecolorAlpha: 4
   bytesPerSample * samplesPerPixer
-
-export
-  Png, Chunk, IhdrChuck, Rgb, Point, PlteChuck, Bkgd, BkgdTy, ChunkData,
-  ChunkTy

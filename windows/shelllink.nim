@@ -9,7 +9,7 @@ proc constructSet(start, finish, step: int): HashSet[uint32] =
   toSeq(countup(start, finish, step)).mapIt(it.uint32).toHashSet
 
 # 2.1.1 LinkFlags
-createParser(LinkFlags, bitEndian = r):
+createParser(linkFlags, bitEndian = r):
   1: hasLinkTargetIdList
   1: hasLinkInfo
   1: hasName
@@ -40,39 +40,39 @@ createParser(LinkFlags, bitEndian = r):
   5: _
 
 # 2.1.3 HotKeyFlags
-createParser(HotKeyFlags):
+createParser(hotKeyFlags):
   u8 {valid: _ in {0x00, 0x30..0x5A, 0x70..0x91}}: lowByte
   u8 {valid: _ in {0x00, 0x01, 0x02, 0x04}}: highByte
 
 # 2.1 ShellLinkHeader
-createParser(ShellLinkHeader, endian = l):
+createParser(shellLinkHeader, endian = l):
   u32: headerSize = 0x0000004C
   s: linkClsId =
     "\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46"
-  *LinkFlags: linkFlags
-  *FileAttributesFlags: fileAttributes
+  *linkFlags: linkFlags
+  *fileAttributesFlags: fileAttributes
   64: creationTime
   64: accessTime
   64: writeTime
   u32: fileSize
   u32: iconIndex
   u32: showCommand
-  *HotKeyFlags: hotKey
+  *hotKeyFlags: hotKey
   16: reserved1 = 0
   32: reserved2 = 0
   32: reserved3 = 0
 
 # 2.2.1 IDList
-createParser(IdList):
-  *ShellItem: {itemIdList}
+createParser(idList):
+  *shellItem: {itemIdList}
   u16: terminalId = 0
 
 # 2.2 LinkTargetIDList
-createParser(LinkTargetIdList, endian = l):
+createParser(linkTargetIdList, endian = l):
   u16: idListSize
-  *IdList: idList(idListSize)
+  *idList: idList(idListSize)
 
-createParser(VolumeIdData, endian = l):
+createParser(volumeIdData, endian = l):
   u32 {valid: _ in {0x00..0x06}}: driveType
   u32: driveSerialNumber
   u32: volumeLabelOffset
@@ -81,12 +81,12 @@ createParser(VolumeIdData, endian = l):
   u8: data{s.atEnd}
 
 # 2.3.1 VolumeID
-createParser(VolumeId, endian = l):
+createParser(volumeId, endian = l):
   u32 {valid: _ > 0x10}: volumeIdSize
-  *VolumeIdData: data(volumeIdSize - 4)
+  *volumeIdData: data(volumeIdSize - 4)
 
 # 2.3.2 CommonNetworkRelativeLink
-createParser(CommonNetworkRelativeLink, endian = l):
+createParser(commonNetworkRelativeLink, endian = l):
   u32 {valid: _ >= 0x14}: commonNetworkRelativeLinkSize
   r1: validDevice
   r1: validNetType
@@ -111,7 +111,7 @@ createParser(CommonNetworkRelativeLink, endian = l):
   u16 {cond: deviceNameOffset > 14}: deviceNameUnicode
 
 # 2.3 LinkInfo
-createParser(LinkInfoHeader, endian = l, size: uint32, headerSize: uint32):
+createParser(linkInfoHeader, endian = l, size: uint32, headerSize: uint32):
   r1: volumeIdAndLocalBasePath
   r1: commonNetworkRelativeLinkAndPathSuffix
   r30: _ = 0
@@ -128,11 +128,11 @@ createParser(LinkInfoHeader, endian = l, size: uint32, headerSize: uint32):
   }: localBasePathOffsetUnicode
   u32 {cond: headerSize >= 0x24}: commonPathSuffixOffsetUnicode
 
-createParser(LinkInfoData, endian = l, size: uint32):
+createParser(linkInfoData, endian = l, size: uint32):
   u32 {valid: _ == 0x1C or _ >= 0x24}: linkInfoHeaderSize
-  *LinkInfoHeader(size, linkInfoHeaderSize):
+  *linkInfoHeader(size, linkInfoHeaderSize):
     linkInfoHeader(linkInfoHeaderSize - 8)
-  *VolumeId {
+  *volumeId {
     condPos: (linkInfoHeader.volumeIdAndLocalBasePath.bool,
               linkInfoHeader.volumeIdOffset.int - 4)
   }: volumeId
@@ -140,7 +140,7 @@ createParser(LinkInfoData, endian = l, size: uint32):
     condPos: (linkInfoHeader.volumeIdAndLocalBasePath.bool,
               linkInfoHeader.localBasePathOffset.int - 4)
   }: localBasePath
-  *CommonNetworkRelativeLink {
+  *commonNetworkRelativeLink {
     cond: linkInfoHeader.commonNetworkRelativeLinkAndPathSuffix.bool
   }: commonNetworkRelativeLink
   s: commonPathSuffix
@@ -150,27 +150,25 @@ createParser(LinkInfoData, endian = l, size: uint32):
   }: localBasePathUnicode{_ == 0}
   u16 {cond: linkInfoHeaderSize >= 0x24}: commonPathSuffixUnicode{_ == 0}
 
-createParser(LinkInfo, endian = l):
+createParser(linkInfo, endian = l):
   u32: linkInfoSize
-  *LinkInfoData(linkInfoSize): linkInfoData(linkInfoSize - 4)
+  *linkInfoData(linkInfoSize): linkInfoData(linkInfoSize - 4)
 
 # 2.4 StringData
-createParser(StringData, endian = l):
+createParser(stringData, endian = l):
   u16: countCharacters
   u16: str[countCharacters]
 
-createParser(ShellLink):
-  *ShellLinkHeader: shellLinkHeader
-  *LinkTargetIdList {cond: shellLinkHeader.linkFlags.hasLinkTargetIdList.bool}:
+createParser(shellLink):
+  *shellLinkHeader: shellLinkHeader
+  *linkTargetIdList {cond: shellLinkHeader.linkFlags.hasLinkTargetIdList.bool}:
     linkTargetIdList
-  *LinkInfo {cond: shellLinkHeader.linkFlags.hasLinkInfo.bool}: linkInfo
-  *StringData {cond: shellLinkHeader.linkFlags.hasName.bool}: nameString
-  *StringData {cond: shellLinkHeader.linkFlags.hasRelativePath.bool}:
+  *linkInfo {cond: shellLinkHeader.linkFlags.hasLinkInfo.bool}: linkInfo
+  *stringData {cond: shellLinkHeader.linkFlags.hasName.bool}: nameString
+  *stringData {cond: shellLinkHeader.linkFlags.hasRelativePath.bool}:
     relativePath
-  *StringData {cond: shellLinkHeader.linkFlags.hasWorkingDir.bool}: workingDir
-  *StringData {cond: shellLinkHeader.linkFlags.hasArguments.bool}:
+  *stringData {cond: shellLinkHeader.linkFlags.hasWorkingDir.bool}: workingDir
+  *stringData {cond: shellLinkHeader.linkFlags.hasArguments.bool}:
     commandLineArguments
-  *StringData {cond: shellLinkHeader.linkFlags.hasIconLocation.bool}:
+  *stringData {cond: shellLinkHeader.linkFlags.hasIconLocation.bool}:
     iconLocation
-
-export ShellLink

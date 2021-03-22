@@ -2,7 +2,7 @@
 
 import binarylang, binarylang/plugins
 
-createParser(DosHeader, endian = l):
+createParser(dosHeader, endian = l):
   s: _ = "MZ"
   u16: lastSize
   u16: nBlocks
@@ -24,7 +24,7 @@ createParser(DosHeader, endian = l):
   u32: peOfs
 
 # COFF File Header (Object and Image)
-createParser(CoffHeader, endian = l):
+createParser(coffHeader, endian = l):
   u16: machine
   u16: numberOfSections
   u32: timeDateStamp
@@ -33,7 +33,7 @@ createParser(CoffHeader, endian = l):
   u16: sizeOfOptionalHeader
   u16: characteristics
 
-createParser(OptionalHeaderStd, endian = l):
+createParser(optionalHeaderStd, endian = l):
   u16 {valid: _ in {0x10b, 0x20b, 0x107}}: magic
   u8: majorLinkVersion
   u8: minorLinkVersion
@@ -44,7 +44,7 @@ createParser(OptionalHeaderStd, endian = l):
   u32: baseOfCode
   u32 {cond: magic == 0x10b}: baseOfData
 
-createParser(OptionalHeaderWindowsSpecificPe32, endian = l):
+createParser(optionalHeaderWindowsSpecificPe32, endian = l):
   u32: imageBase
   u32: sectionAlignment
   u32: fileAlignment
@@ -67,7 +67,7 @@ createParser(OptionalHeaderWindowsSpecificPe32, endian = l):
   u32: loaderFlags
   u32: numberOfRvaAndSizes
 
-createParser(OptionalHeaderWindowsSpecificPe32Plus, endian = l):
+createParser(optionalHeaderWindowsSpecificPe32Plus, endian = l):
   u64: imageBase
   u32: sectionAlignment
   u32: fileAlignment
@@ -95,39 +95,39 @@ type PeFormat = enum
   pfPe32 = (0x10b, "PE32")
   pfPe32Plus = (0x20b, "PE32+")
 
-createVariantParser(OptionalHeaderWindowsSpecific, OptionalHeaderWindowsSpecificTy, code: PeFormat):
-  (pfPe32): *OptionalHeaderWindowsSpecificPe32: optionalHeaderWindowsSpecificPe32
-  (pfPe32Plus): *OptionalHeaderWindowsSpecificPe32Plus: optionalHeaderWindowsSpecificPe32Plus
+createVariantParser(optionalHeaderWindowsSpecific, code: PeFormat):
+  (pfPe32): *optionalHeaderWindowsSpecificPe32: optionalHeaderWindowsSpecificPe32
+  (pfPe32Plus): *optionalHeaderWindowsSpecificPe32Plus: optionalHeaderWindowsSpecificPe32Plus
   _: nil
 
-createParser(DataDirectory, endian = l):
+createParser(dataDirectory, endian = l):
   u32: virtualAddress
   u32: size
 
-createParser(DataDirectories, endian = l):
-  *DataDirectory: exportTable
-  *DataDirectory: importTable
-  *DataDirectory: resourceTable
-  *DataDirectory: exceptionTable
-  *DataDirectory: certificateTable
-  *DataDirectory: baseRelocationTable
-  *DataDirectory: debug
-  *DataDirectory: architecture
-  *DataDirectory: globalPtr
-  *DataDirectory: tlsTable
-  *DataDirectory: loadConfigTable
-  *DataDirectory: boundImport
-  *DataDirectory: iat
-  *DataDirectory: delayImportDescriptor
-  *DataDirectory: clrRuntimeHeader
-  *DataDirectory {valid: _.virtualAddress == 0 and _.size == 0}: reserved
+createParser(dataDirectories, endian = l):
+  *dataDirectory: exportTable
+  *dataDirectory: importTable
+  *dataDirectory: resourceTable
+  *dataDirectory: exceptionTable
+  *dataDirectory: certificateTable
+  *dataDirectory: baseRelocationTable
+  *dataDirectory: debug
+  *dataDirectory: architecture
+  *dataDirectory: globalPtr
+  *dataDirectory: tlsTable
+  *dataDirectory: loadConfigTable
+  *dataDirectory: boundImport
+  *dataDirectory: iat
+  *dataDirectory: delayImportDescriptor
+  *dataDirectory: clrRuntimeHeader
+  *dataDirectory {valid: _.virtualAddress == 0 and _.size == 0}: reserved
 
-createParser(OptionalHeader, endian = l):
-  *OptionalHeaderStd: standardFields
-  *OptionalHeaderWindowsSpecific(PeFormat(standardFields.magic)): windowsSpecificFields
-  *DataDirectories: dataDirectories
+createParser(optionalHeader, endian = l):
+  *optionalHeaderStd: standardFields
+  *optionalHeaderWindowsSpecific(PeFormat(standardFields.magic)): windowsSpecificFields
+  *dataDirectories: dataDirs
 
-createParser(Section, endian = l):
+createParser(section, endian = l):
   u8: name[8]
   u32: virtualSize
   u32: virtualAddress
@@ -140,14 +140,13 @@ createParser(Section, endian = l):
   u32: characteristics
   u8 {pos: int(pointerToRawData)}: rawData[sizeOfRawData]
 
-createParser(PeHeader, endian = l):
+createParser(peHeader, endian = l):
   s: _ = "PE\x00\x00"
-  *CoffHeader: coffHeader
-  *OptionalHeader {cond: coffHeader.sizeOfOptionalHeader > 0}: optionalHeader(coffHeader.sizeOfOptionalHeader)
-  *Section: sections[coffHeader.numberOfSections]
+  *coffHeader: coffHdr
+  *optionalHeader {cond: coffHdr.sizeOfOptionalHeader > 0}:
+    optlHeader(coffHdr.sizeOfOptionalHeader)
+  *section: sections[coffHdr.numberOfSections]
 
-createParser(Pe, endian = l):
-  *DosHeader: dosHeader
-  *PeHeader {pos: int(dosHeader.peOfs)}: peHeader
-
-export Pe
+createParser(pe, endian = l):
+  *dosHeader: dosHdr
+  *peHeader {pos: int(dosHdr.peOfs)}: peHdr
