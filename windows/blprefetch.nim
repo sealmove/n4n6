@@ -10,100 +10,100 @@ type PrefetchVersion* = enum
   pv26 = (26, "Windows 8.1")
   pv30 = (30, "Windows 10")
 
-type Lz77Huffman = seq[byte]
+type Lz77Huffman* = seq[byte]
 proc lz77HuffmanGet(s: BitStream, size: uint32): seq[byte] =
   while not s.atEnd:
     result.add s.readU8
   decompressMam(result, size.int)
 proc lz77HuffmanPut(s: BitStream, input: seq[byte], size: uint32) =
   writeStr(s, input.mapIt(it.char).join)
-let lz77Huffman = (get: lz77HuffmanGet, put: lz77HuffmanPut) 
+let lz77Huffman* = (get: lz77HuffmanGet, put: lz77HuffmanPut) 
 
 # 3 Compressed Prefetch file - MAM file format
 createParser(mam, endian = l):
   s: _ = "MAM\x04"
-  u32: size
-  *lz77Huffman(size): data
+  u32: *size
+  *lz77Huffman(size): *data
 
 # 4.1 File header
 createParser(header, endian = l):
-  u32: version
+  u32: *version
   s: _ = "SCCA"
-  u32: unknown1
-  u32: fileSize
-  u16: exeFilename[29]
+  u32: *unknown1
+  u32: *fileSize
+  u16: *exeFilename[29]
   u16: _ = 0
-  u32: hash
-  u32: unknown2
+  u32: *hash
+  u32: *unknown2
 
 # 4.2 File information
 createParser(fileInfo17, endian = l):
-  u32: fileMetricsOfs = 152
-  u32: fileMetricsEntries
-  u32: traceChainsOfs
-  u32: traceChainsEntries
-  u32: filenameStringsOfs
-  u32: filenameStringsSize
-  u32: volumesOfs
-  u32: volumesEntries
-  u32: volumesSize
-  u64: lastRunTime
-  u8: unknown1[16]
-  u32: runCount
-  u32: unknown2
+  u32: *fileMetricsOfs = 152
+  u32: *fileMetricsEntries
+  u32: *traceChainsOfs
+  u32: *traceChainsEntries
+  u32: *filenameStringsOfs
+  u32: *filenameStringsSize
+  u32: *volumesOfs
+  u32: *volumesEntries
+  u32: *volumesSize
+  u64: *lastRunTime
+  u8: *unknown1[16]
+  u32: *runCount
+  u32: *unknown2
 
 createParser(fileInfo23, endian = l):
-  u32: fileMetricsOfs = 240
-  u32: fileMetricsEntries
-  u32: traceChainsOfs
-  u32: traceChainsEntries
-  u32: filenameStringsOfs
-  u32: filenameStringsSize
-  u32: volumesOfs
-  u32: volumesEntries
-  u32: volumesSize
-  u64: unknown1
-  u64: lastRunTime
-  u8: unknown2[16]
-  u32: runCount
-  u32: unknown3
-  u8: unknown4[80]
+  u32: *fileMetricsOfs = 240
+  u32: *fileMetricsEntries
+  u32: *traceChainsOfs
+  u32: *traceChainsEntries
+  u32: *filenameStringsOfs
+  u32: *filenameStringsSize
+  u32: *volumesOfs
+  u32: *volumesEntries
+  u32: *volumesSize
+  u64: *unknown1
+  u64: *lastRunTime
+  u8: *unknown2[16]
+  u32: *runCount
+  u32: *unknown3
+  u8: *unknown4[80]
 
 createParser(fileInfo26, endian = l):
-  u32: fileMetricsOfs = 304
-  u32: fileMetricsEntries
-  u32: traceChainsOfs
-  u32: traceChainsEntries
-  u32: filenameStringsOfs
-  u32: filenameStringsSize
-  u32: volumesOfs
-  u32: volumesEntries
-  u32: volumesSize
-  u64: unknown1
-  u64: lastRunTimes[8]
-  u8: unknown2[16]
-  u32: runCount
-  u32: unknown3
-  u32: unknown4
-  u8: unknown5[88]
+  u32: *fileMetricsOfs = 304
+  u32: *fileMetricsEntries
+  u32: *traceChainsOfs
+  u32: *traceChainsEntries
+  u32: *filenameStringsOfs
+  u32: *filenameStringsSize
+  u32: *volumesOfs
+  u32: *volumesEntries
+  u32: *volumesSize
+  u64: *unknown1
+  u64: *lastRunTimes[8]
+  u8: *unknown2[16]
+  u32: *runCount
+  u32: *unknown3
+  u32: *unknown4
+  u8: *unknown5[88]
 
 createParser(fileInfo30, endian = l):
-  u32: fileMetricsOfs = 296
-  u32: fileMetricsEntries
-  u32: traceChainsOfs
-  u32: traceChainsEntries
-  u32: filenameStringsOfs
-  u32: filenameStringsSize
-  u32: volumesOfs
-  u32: volumesEntries
-  u32: volumesSize
-  u64: unknown1
-  u64: lastRunTimes[8]
-  u64: unknown2
-  u32: runCount
-  u32: unknown3
-  u32: unknown4
-  u8: unknown5[88]
+  u32: *fileMetricsOfs = 296
+  u32: *fileMetricsEntries
+  u32: *traceChainsOfs
+  u32: *traceChainsEntries
+  u32: *filenameStringsOfs
+  u32: *filenameStringsSize
+  u32: *volumesOfs
+  u32: *volumesEntries
+  u32: *volumesSize
+  u64: *unknown1
+  u64: *lastRunTimes[8]
+  u64: *unknown2
+  u32: *runCount
+  u32: *unknown3
+  u32: *unknown4
+  u8: *unknown5[88]
 
 createVariantParser(fileInfo, version: PrefetchVersion):
   (pv17): *fileInfo17: *fileInfo17
@@ -157,57 +157,74 @@ proc filenameStringsSize*(o: FileInfo): uint32 =
 
 # 4.3 File metrics array
 createParser(fileMetric17, endian = l):
-  u32: unknown1
-  u32: unknown2
-  u32: filenameStringsOfs
-  u32: filenameStringsChars
-  u32: unknown3
+  u32: *unknown1
+  u32: *unknown2
+  u32: *filenameStringsOfs
+  u32: *filenameStringsChars
+  u32: *unknown3
 
 createParser(fileMetric23, endian = l):
-  u32: unknown1
-  u32: unknown2
-  u32: unknown3
-  u32: filenameStringsOfs
-  u32: filenameStringsChars
-  u32: unknown4
-  u64: fileRef
+  u32: *unknown1
+  u32: *unknown2
+  u32: *unknown3
+  u32: *filenameStringsOfs
+  u32: *filenameStringsChars
+  u32: *unknown4
+  u64: *fileRef
 
 createVariantParser(fileMetric, version: PrefetchVersion):
-  (pv17): *fileMetric17: fileMetric17
-  _: *fileMetric23: fileMetric23
+  (pv17): *fileMetric17: *fileMetric17
+  _: *fileMetric23: *fileMetric23
 
 # 4.4 Trace chains array
 createParser(traceChain17, endian = l):
-  u32: nextIndex
-  u32: blocksLoaded
-  u8: unknown1
-  u8: unknown2
-  u16: unknown3
+  u32: *nextIndex
+  u32: *blocksLoaded
+  u8: *unknown1
+  u8: *unknown2
+  u16: *unknown3
 
 createParser(traceChain30, endian = l):
-  u32: blocksLoaded
-  u8: unknown1
-  u8: unknown2
-  u16: unknown3
+  u32: *blocksLoaded
+  u8: *unknown1
+  u8: *unknown2
+  u16: *unknown3
 
 createVariantParser(traceChain, version: PrefetchVersion):
-  (pv17): *traceChain17: traceChain17
-  _: *traceChain30: traceChain30
+  (pv17): *traceChain17: *traceChain17
+  _: *traceChain30: *traceChain30
 
 # 4.5 Filename strings
 createParser(filenameString, endian = l):
-  u16: str{_ == 0 or s.atEnd}
+  u16: *str{_ == 0 or s.atEnd}
 
 createParser(filenameStrings):
-  *filenameString: strs{s.atEnd}
+  *filenameString: *strs{s.atEnd}
 
 # 4 Uncompressed Prefetch file
 createParser(prefetch, endian = l):
-  *header: prefetchHeader
-  *fileInfo(prefetchHeader.version.PrefetchVersion): info
+  *header: *prefetchHeader
+  *fileInfo(prefetchHeader.version.PrefetchVersion): *info
   *fileMetric(prefetchHeader.version.PrefetchVersion) {
-    pos: info.fileMetricsOfs.int}: fileMetrics[info.fileMetricsEntries]
+    pos: info.fileMetricsOfs.int}: *fileMetrics[info.fileMetricsEntries]
   *traceChain(prefetchHeader.version.PrefetchVersion) {
-    pos: info.traceChainsOfs.int}: traceChains[info.traceChainsEntries]
+    pos: info.traceChainsOfs.int}: *traceChains[info.traceChainsEntries]
   *filenameStrings {pos: info.filenameStringsOfs.int}:
-    filenames(info.filenameStringsSize.int)
+    *filenames(info.filenameStringsSize.int)
+
+export
+  mam, Mam,
+  header, Header,
+  fileInfo17, FileInfo17,
+  fileInfo23, FileInfo23,
+  fileInfo30, FileInfo30,
+  fileInfo, FileInfo,
+  fileMetric17, FileMetric17,
+  fileMetric23, FileMetric23,
+  fileMetric, FileMetric,
+  traceChain17, TraceChain17,
+  traceChain30, TraceChain30,
+  traceChain, TraceChain,
+  filenameString, FilenameString,
+  filenameStrings, FilenameStrings,
+  prefetch, Prefetch

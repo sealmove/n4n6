@@ -29,25 +29,25 @@ type
     cmkZlib
 
 createParser(ihdrChuck):
-  u32: width
-  u32: height
-  u8: bitDepth
-  u8: colorKind
-  u8: compressionMethod
-  u8: filterMethod
-  u8: interlaceMethod
+  u32: *width
+  u32: *height
+  u8: *bitDepth
+  u8: *colorKind
+  u8: *compressionMethod
+  u8: *filterMethod
+  u8: *interlaceMethod
 
 createParser(rgb):
-  u8: r
-  u8: g
-  u8: b
+  u8: *r
+  u8: *g
+  u8: *b
 
 createParser(point):
-  u32: x
-  u32: y
+  u32: *x
+  u32: *y
 
 createParser(plteChuck):
-  *rgb: pixels{s.atEnd}
+  *rgb: *pixels{s.atEnd}
 
 createVariantParser(bkgd, *color: ColorKind):
   (ckGreyscale, ckGreyscaleAlpha):
@@ -72,9 +72,9 @@ createVariantParser(chunkData, *typ: ChunkKind, color: ColorKind):
   (ckGama):
     u32: *gammaInt
   (ckIccp):
-    s {valid: _.len < 80}: profileName
-    u8: compressionMethod
-    u8: compressedProfile{s.atEnd}
+    s {valid: _.len < 80}: *profileName
+    u8: *compressionMethod
+    u8: *compressedProfile{s.atEnd}
   (ckSrgb):
     u8: *renderIntent
   (ckBkgd):
@@ -106,18 +106,18 @@ createVariantParser(chunkData, *typ: ChunkKind, color: ColorKind):
   (ckIend): nil
 
 createParser(chunk, color: ColorKind):
-  u32: len
-  s: typ(4)
-  *chunkData(parseEnum[ChunkKind](typ), color): body(len)
-  u32: crc
+  u32: *len
+  s: *typ(4)
+  *chunkData(parseEnum[ChunkKind](typ), color): *body(len)
+  u32: *crc
 
 createParser(png):
   s: _ = "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"
   s: _ = "\0\0\0\r"
   s: _ = "IHDR"
-  *ihdrChuck: ihdr
-  u32: ihdrCrc
-  *chunk(ihdr.colorKind.ColorKind): chunks{_.typ == "IEND" or s.atEnd}
+  *ihdrChuck: *ihdr
+  u32: *ihdrCrc
+  *chunk(ihdr.colorKind.ColorKind): *chunks{_.typ == "IEND" or s.atEnd}
 
 proc bytesPerPixel*(image: Png): int =
   ## Should only be called for images with a bit depth that is a byte multiple
@@ -134,3 +134,13 @@ proc bytesPerPixel*(image: Png): int =
     of ckGreyscaleAlpha: 2
     of ckTruecolorAlpha: 4
   bytesPerSample * samplesPerPixer
+
+export
+  ihdrChuck, IhdrChuck,
+  rgb, Rgb,
+  point, Point,
+  plteChuck, PlteChuck,
+  bkgd, Bkgd,
+  chunkData, ChunkData,
+  chunk, Chunk,
+  png, Png
