@@ -9,7 +9,7 @@ proc constructSet(start, finish, step: int): HashSet[uint32] =
   toSeq(countup(start, finish, step)).mapIt(it.uint32).toHashSet
 
 # 2.1.1 LinkFlags
-createParser(linkFlags, bitEndian = r):
+createParser(*linkFlags, bitEndian = r):
   1: *hasLinkTargetIdList
   1: *hasLinkInfo
   1: *hasName
@@ -40,12 +40,12 @@ createParser(linkFlags, bitEndian = r):
   5: _
 
 # 2.1.3 HotKeyFlags
-createParser(hotKeyFlags):
+createParser(*hotKeyFlags):
   u8 {valid: _ in {0x00, 0x30..0x5A, 0x70..0x91}}: *lowByte
   u8 {valid: _ in {0x00, 0x01, 0x02, 0x04}}: *highByte
 
 # 2.1 ShellLinkHeader
-createParser(shellLinkHeader, endian = l):
+createParser(*shellLinkHeader, endian = l):
   u32: *headerSize = 0x0000004C
   s: *linkClsId =
     "\x01\x14\x02\x00\x00\x00\x00\x00\xC0\x00\x00\x00\x00\x00\x00\x46"
@@ -63,16 +63,16 @@ createParser(shellLinkHeader, endian = l):
   32: reserved3 = 0
 
 # 2.2.1 IDList
-createParser(idList):
+createParser(*idList):
   *shellItem: *{itemIdList}
   u16: *terminalId = 0
 
 # 2.2 LinkTargetIDList
-createParser(linkTargetIdList, endian = l):
+createParser(*linkTargetIdList, endian = l):
   u16: *listSize
   *idList: *list(listSize)
 
-createParser(volumeIdData, endian = l):
+createParser(*volumeIdData, endian = l):
   u32 {valid: _ in {0x00..0x06}}: *driveType
   u32: *driveSerialNumber
   u32: *volumeLabelOffset
@@ -81,12 +81,12 @@ createParser(volumeIdData, endian = l):
   u8: *data{s.atEnd}
 
 # 2.3.1 VolumeID
-createParser(volumeId, endian = l):
+createParser(*volumeId, endian = l):
   u32 {valid: _ > 0x10}: *size
   *volumeIdData: *data(size - 4)
 
 # 2.3.2 CommonNetworkRelativeLink
-createParser(commonNetworkRelativeLink, endian = l):
+createParser(*commonNetworkRelativeLink, endian = l):
   u32 {valid: _ >= 0x14}: *commonNetworkRelativeLinkSize
   r1: *validDevice
   r1: *validNetType
@@ -111,7 +111,7 @@ createParser(commonNetworkRelativeLink, endian = l):
   u16 {cond: deviceNameOffset > 14}: *deviceNameUnicode
 
 # 2.3 LinkInfo
-createParser(linkInfoHeader, endian = l, size: uint32, headerSize: uint32):
+createParser(*linkInfoHeader, endian = l, size: uint32, headerSize: uint32):
   r1: *volumeIdAndLocalBasePath
   r1: *commonNetworkRelativeLinkAndPathSuffix
   r30: _ = 0
@@ -128,7 +128,7 @@ createParser(linkInfoHeader, endian = l, size: uint32, headerSize: uint32):
   }: *localBasePathOffsetUnicode
   u32 {cond: headerSize >= 0x24}: *commonPathSuffixOffsetUnicode
 
-createParser(linkInfoData, endian = l, size: uint32):
+createParser(*linkInfoData, endian = l, size: uint32):
   u32 {valid: _ == 0x1C or _ >= 0x24}: *infoHeaderSize
   *linkInfoHeader(size, infoHeaderSize):
     *infoHeader(infoHeaderSize - 8)
@@ -150,16 +150,16 @@ createParser(linkInfoData, endian = l, size: uint32):
   }: *localBasePathUnicode{_ == 0}
   u16 {cond: infoHeaderSize >= 0x24}: *commonPathSuffixUnicode{_ == 0}
 
-createParser(linkInfo, endian = l):
+createParser(*linkInfo, endian = l):
   u32: *size
   *linkInfoData(size): *data(size - 4)
 
 # 2.4 StringData
-createParser(stringData, endian = l):
+createParser(*stringData, endian = l):
   u16: *countCharacters
   u16: *str[countCharacters]
 
-createParser(shellLink):
+createParser(*shellLink):
   *shellLinkHeader: *header
   *linkTargetIdList {cond: header.flags.hasLinkTargetIdList.bool}:
     *targetIdList
@@ -172,18 +172,3 @@ createParser(shellLink):
     *commandLineArguments
   *stringData {cond: header.flags.hasIconLocation.bool}:
     *iconLocation
-
-export
-  linkFlags, LinkFlags,
-  hotKeyFlags, HotKeyFlags,
-  shellLinkHeader, ShellLinkHeader,
-  idList, IdList,
-  linkTargetIdList, LinkTargetIdList,
-  volumeIdData, VolumeIdData,
-  volumeId, VolumeId,
-  commonNetworkRelativeLink, CommonNetworkRelativeLink,
-  linkInfoHeader, LinkInfoHeader,
-  linkInfoData, LinkInfoData,
-  linkInfo, LinkInfo,
-  stringData, StringData,
-  shellLink, ShellLink

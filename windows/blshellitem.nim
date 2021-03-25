@@ -2,7 +2,7 @@
 
 import binarylang, binarylang/plugins
 
-createParser(fileAttributesFlagsLow, bitEndian = r):
+createParser(*fileAttributesFlagsLow, bitEndian = r):
   1: *readonly
   1: *hidden
   1: *system
@@ -20,28 +20,28 @@ createParser(fileAttributesFlagsLow, bitEndian = r):
   1: *encrypted
   1: *integrityStream
 
-createParser(fileAttributesFlagsHigh, bitEndian = r):
+createParser(*fileAttributesFlagsHigh, bitEndian = r):
   1: *virtual
   1: *noScrubData
   14: _
 
-createParser(fileAttributesFlags):
+createParser(*fileAttributesFlags):
   *fileAttributesFlagsLow: *low
   *fileAttributesFlagsHigh: *high
 
 # 6.4 Extension block 0xbeef0003
-createParser(extensionBlock0xbeef0003):
+createParser(*extensionBlock0xbeef0003):
   u16: *size
   u16: *version
   u32: *signature = 0xBEEF0003'u32
   b16: *shellFolderId
   u16: *offset
 
-createParser(fatTime, endian = l):
+createParser(*fatTime, endian = l):
   u16: *low
   u16: *high
 
-createParser(clsId):
+createParser(*clsId):
   lu32: *part1
   lu16: *part2
   lu16: *part3
@@ -60,16 +60,16 @@ type SortIndex* = enum
   siMyGames = (0x80, "My Games")
 
 # 3.2 Root folder shell item
-createParser(rootFolderShellItem):
+createParser(*rootFolderShellItem):
   u8: *sortIndex
   *clsId: *shellFolderId
 
 # 3.3 Volume shell item
-createParser(volumeShellItem, clsTypeId: byte):
+createParser(*volumeShellItem, clsTypeId: byte):
   u8 {cond: bool(clsTypeId and 0x1)}: *flags
 
 # 3.4 File entry shell item
-createParser(fileEntryShellItem, endian = l, clsTypeId: byte):
+createParser(*fileEntryShellItem, endian = l, clsTypeId: byte):
   8: _ = 0
   u32: *fileSize
   *fatTime: *writeTime
@@ -78,25 +78,13 @@ createParser(fileEntryShellItem, endian = l, clsTypeId: byte):
   u16 {cond: (clsTypeId and 0x04) == 1}: *primaryNameUnicode{_ == 0}
 
 # 2.1 Shell Item
-createVariantParser(shellItemData, *code: byte):
+createVariantParser(*shellItemData, *code: byte):
   (0x10): *rootFolderShellItem: *rootFolder
   (0x20): *volumeShellItem(code): *volume
   (0x30): *fileEntryShellItem(code): *fileEntry
   _: nil
 
-createParser(shellItem, endian = l):
+createParser(*shellItem, endian = l):
   u16: *size
   u8: *clsTypeId
   *shellItemData(clsTypeId and 0x70): *data(size - 3)
-
-export
-  fileAttributesFlagsLow, FileAttributesFlagsLow,
-  fileAttributesFlagsHigh, FileAttributesFlagsHigh,
-  fileAttributesFlags, FileAttributesFlags,
-  extensionBlock0xbeef0003, ExtensionBlock0xbeef0003,
-  fatTime, FatTime,
-  clsId, ClsId,
-  volumeShellItem, VolumeShellItem,
-  fileEntryShellItem, FileEntryShellItem,
-  shellItemData, ShellItemData,
-  shellItem, ShellItem

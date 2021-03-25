@@ -20,13 +20,13 @@ proc lz77HuffmanPut(s: BitStream, input: seq[byte], size: uint32) =
 let lz77Huffman* = (get: lz77HuffmanGet, put: lz77HuffmanPut) 
 
 # 3 Compressed Prefetch file - MAM file format
-createParser(mam, endian = l):
+createParser(*mam, endian = l):
   s: _ = "MAM\x04"
   u32: *size
   *lz77Huffman(size): *data
 
 # 4.1 File header
-createParser(header, endian = l):
+createParser(*header, endian = l):
   u32: *version
   s: _ = "SCCA"
   u32: *unknown1
@@ -37,7 +37,7 @@ createParser(header, endian = l):
   u32: *unknown2
 
 # 4.2 File information
-createParser(fileInfo17, endian = l):
+createParser(*fileInfo17, endian = l):
   u32: *fileMetricsOfs = 152
   u32: *fileMetricsEntries
   u32: *traceChainsOfs
@@ -52,7 +52,7 @@ createParser(fileInfo17, endian = l):
   u32: *runCount
   u32: *unknown2
 
-createParser(fileInfo23, endian = l):
+createParser(*fileInfo23, endian = l):
   u32: *fileMetricsOfs = 240
   u32: *fileMetricsEntries
   u32: *traceChainsOfs
@@ -69,7 +69,7 @@ createParser(fileInfo23, endian = l):
   u32: *unknown3
   u8: *unknown4[80]
 
-createParser(fileInfo26, endian = l):
+createParser(*fileInfo26, endian = l):
   u32: *fileMetricsOfs = 304
   u32: *fileMetricsEntries
   u32: *traceChainsOfs
@@ -87,7 +87,7 @@ createParser(fileInfo26, endian = l):
   u32: *unknown4
   u8: *unknown5[88]
 
-createParser(fileInfo30, endian = l):
+createParser(*fileInfo30, endian = l):
   u32: *fileMetricsOfs = 296
   u32: *fileMetricsEntries
   u32: *traceChainsOfs
@@ -105,7 +105,7 @@ createParser(fileInfo30, endian = l):
   u32: *unknown4
   u8: *unknown5[88]
 
-createVariantParser(fileInfo, version: PrefetchVersion):
+createVariantParser(*fileInfo, *version: PrefetchVersion):
   (pv17): *fileInfo17: *fileInfo17
   (pv23): *fileInfo23: *fileInfo23
   (pv26): *fileInfo26: *fileInfo26
@@ -156,14 +156,14 @@ proc filenameStringsSize*(o: FileInfo): uint32 =
   else: discard
 
 # 4.3 File metrics array
-createParser(fileMetric17, endian = l):
+createParser(*fileMetric17, endian = l):
   u32: *unknown1
   u32: *unknown2
   u32: *filenameStringsOfs
   u32: *filenameStringsChars
   u32: *unknown3
 
-createParser(fileMetric23, endian = l):
+createParser(*fileMetric23, endian = l):
   u32: *unknown1
   u32: *unknown2
   u32: *unknown3
@@ -172,33 +172,33 @@ createParser(fileMetric23, endian = l):
   u32: *unknown4
   u64: *fileRef
 
-createVariantParser(fileMetric, version: PrefetchVersion):
+createVariantParser(*fileMetric, *version: PrefetchVersion):
   (pv17): *fileMetric17: *fileMetric17
   _: *fileMetric23: *fileMetric23
 
 # 4.4 Trace chains array
-createParser(traceChain17, endian = l):
+createParser(*traceChain17, endian = l):
   u32: *nextIndex
   u32: *blocksLoaded
   u8: *unknown1
   u8: *unknown2
   u16: *unknown3
 
-createParser(traceChain30, endian = l):
+createParser(*traceChain30, endian = l):
   u32: *blocksLoaded
   u8: *unknown1
   u8: *unknown2
   u16: *unknown3
 
-createVariantParser(traceChain, version: PrefetchVersion):
+createVariantParser(*traceChain, *version: PrefetchVersion):
   (pv17): *traceChain17: *traceChain17
   _: *traceChain30: *traceChain30
 
 # 4.5 Filename strings
-createParser(filenameString, endian = l):
+createParser(*filenameString, endian = l):
   u16: *str{_ == 0 or s.atEnd}
 
-createParser(filenameStrings):
+createParser(*filenameStrings):
   *filenameString: *strs{s.atEnd}
 
 # 4 Uncompressed Prefetch file
@@ -211,20 +211,3 @@ createParser(prefetch, endian = l):
     pos: info.traceChainsOfs.int}: *traceChains[info.traceChainsEntries]
   *filenameStrings {pos: info.filenameStringsOfs.int}:
     *filenames(info.filenameStringsSize.int)
-
-export
-  mam, Mam,
-  header, Header,
-  fileInfo17, FileInfo17,
-  fileInfo23, FileInfo23,
-  fileInfo30, FileInfo30,
-  fileInfo, FileInfo,
-  fileMetric17, FileMetric17,
-  fileMetric23, FileMetric23,
-  fileMetric, FileMetric,
-  traceChain17, TraceChain17,
-  traceChain30, TraceChain30,
-  traceChain, TraceChain,
-  filenameString, FilenameString,
-  filenameStrings, FilenameStrings,
-  prefetch, Prefetch

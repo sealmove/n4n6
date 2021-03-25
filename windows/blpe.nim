@@ -2,7 +2,7 @@
 
 import binarylang, binarylang/plugins
 
-createParser(dosHeader, endian = l):
+createParser(*dosHeader, endian = l):
   s: _ = "MZ"
   u16: *lastSize
   u16: *nBlocks
@@ -24,7 +24,7 @@ createParser(dosHeader, endian = l):
   u32: *peOfs
 
 # COFF File Header (Object and Image)
-createParser(coffHeader, endian = l):
+createParser(*coffHeader, endian = l):
   u16: *machine
   u16: *numberOfSections
   u32: *timeDateStamp
@@ -33,7 +33,7 @@ createParser(coffHeader, endian = l):
   u16: *sizeOfOptionalHeader
   u16: *characteristics
 
-createParser(optionalHeaderStd, endian = l):
+createParser(*optionalHeaderStd, endian = l):
   u16 {valid: _ in {0x10b, 0x20b, 0x107}}: *magic
   u8: *majorLinkVersion
   u8: *minorLinkVersion
@@ -44,7 +44,7 @@ createParser(optionalHeaderStd, endian = l):
   u32: *baseOfCode
   u32 {cond: magic == 0x10b}: *baseOfData
 
-createParser(optionalHeaderWindowsSpecificPe32, endian = l):
+createParser(*optionalHeaderWindowsSpecificPe32, endian = l):
   u32: *imageBase
   u32: *sectionAlignment
   u32: *fileAlignment
@@ -67,7 +67,7 @@ createParser(optionalHeaderWindowsSpecificPe32, endian = l):
   u32: *loaderFlags
   u32: *numberOfRvaAndSizes
 
-createParser(optionalHeaderWindowsSpecificPe32Plus, endian = l):
+createParser(*optionalHeaderWindowsSpecificPe32Plus, endian = l):
   u64: *imageBase
   u32: *sectionAlignment
   u32: *fileAlignment
@@ -95,16 +95,16 @@ type PeFormat* = enum
   pfPe32 = (0x10b, "PE32")
   pfPe32Plus = (0x20b, "PE32+")
 
-createVariantParser(optionalHeaderWindowsSpecific, code: PeFormat):
+createVariantParser(*optionalHeaderWindowsSpecific, code: PeFormat):
   (pfPe32): *optionalHeaderWindowsSpecificPe32: *pe32
   (pfPe32Plus): *optionalHeaderWindowsSpecificPe32Plus: *pe32Plus
   _: nil
 
-createParser(dataDirectory, endian = l):
+createParser(*dataDirectory, endian = l):
   u32: *virtualAddress
   u32: *size
 
-createParser(dataDirectories, endian = l):
+createParser(*dataDirectories, endian = l):
   *dataDirectory: *exportTable
   *dataDirectory: *importTable
   *dataDirectory: *resourceTable
@@ -122,13 +122,13 @@ createParser(dataDirectories, endian = l):
   *dataDirectory: *clrRuntimeHeader
   *dataDirectory {valid: _.virtualAddress == 0 and _.size == 0}: *reserved
 
-createParser(optionalHeader, endian = l):
+createParser(*optionalHeader, endian = l):
   *optionalHeaderStd: *standardFields
   *optionalHeaderWindowsSpecific(PeFormat(standardFields.magic)):
     *windowsSpecificFields
   *dataDirectories: *dataDirs
 
-createParser(section, endian = l):
+createParser(*section, endian = l):
   u8: *name[8]
   u32: *virtualSize
   u32: *virtualAddress
@@ -141,27 +141,13 @@ createParser(section, endian = l):
   u32: *characteristics
   u8 {pos: int(pointerToRawData)}: *rawData[sizeOfRawData]
 
-createParser(peHeader, endian = l):
+createParser(*peHeader, endian = l):
   s: _ = "PE\x00\x00"
   *coffHeader: *coffHdr
   *optionalHeader {cond: coffHdr.sizeOfOptionalHeader > 0}:
     *optHeader(coffHdr.sizeOfOptionalHeader)
   *section: *sections[coffHdr.numberOfSections]
 
-createParser(pe, endian = l):
+createParser(*pe, endian = l):
   *dosHeader: *dosHdr
   *peHeader {pos: int(dosHdr.peOfs)}: *peHdr
-
-export
-  dosHeader, DosHeader,
-  coffHeader, CoffHeader,
-  optionalHeaderStd, OptionalHeaderStd,
-  optionalHeaderWindowsSpecificPe32, OptionalHeaderWindowsSpecificPe32,
-  optionalHeaderWindowsSpecificPe32Plus, OptionalHeaderWindowsSpecificPe32Plus,
-  optionalHeaderWindowsSpecific, OptionalHeaderWindowsSpecific,
-  dataDirectory, DataDirectory,
-  dataDirectories, DataDirectories,
-  optionalHeader, OptionalHeader,
-  section, Section,
-  peHeader, PeHeader,
-  pe, Pe

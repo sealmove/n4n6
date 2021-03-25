@@ -28,7 +28,7 @@ type
   CompressionMethodKind* = enum
     cmkZlib
 
-createParser(ihdrChuck):
+createParser(*ihdrChuck):
   u32: *width
   u32: *height
   u8: *bitDepth
@@ -37,19 +37,19 @@ createParser(ihdrChuck):
   u8: *filterMethod
   u8: *interlaceMethod
 
-createParser(rgb):
+createParser(*rgb):
   u8: *r
   u8: *g
   u8: *b
 
-createParser(point):
+createParser(*point):
   u32: *x
   u32: *y
 
-createParser(plteChuck):
+createParser(*plteChuck):
   *rgb: *pixels{s.atEnd}
 
-createVariantParser(bkgd, *color: ColorKind):
+createVariantParser(*bkgd, *color: ColorKind):
   (ckGreyscale, ckGreyscaleAlpha):
     u16: *greyscale
   (ckTruecolor, ckTruecolorAlpha):
@@ -59,7 +59,7 @@ createVariantParser(bkgd, *color: ColorKind):
   (ckIndexed):
     u8: *paletteIndex
 
-createVariantParser(chunkData, *typ: ChunkKind, color: ColorKind):
+createVariantParser(*chunkData, *typ: ChunkKind, color: ColorKind):
   (ckPlte):
     *rgb: *entries{s.atEnd}
   (ckIdat):
@@ -105,13 +105,13 @@ createVariantParser(chunkData, *typ: ChunkKind, color: ColorKind):
     u8: *compressedText{s.atEnd}
   (ckIend): nil
 
-createParser(chunk, color: ColorKind):
+createParser(*chunk, color: ColorKind):
   u32: *len
   s: *typ(4)
   *chunkData(parseEnum[ChunkKind](typ), color): *body(len)
   u32: *crc
 
-createParser(png):
+createParser(*png):
   s: _ = "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"
   s: _ = "\0\0\0\r"
   s: _ = "IHDR"
@@ -134,13 +134,3 @@ proc bytesPerPixel*(image: Png): int =
     of ckGreyscaleAlpha: 2
     of ckTruecolorAlpha: 4
   bytesPerSample * samplesPerPixer
-
-export
-  ihdrChuck, IhdrChuck,
-  rgb, Rgb,
-  point, Point,
-  plteChuck, PlteChuck,
-  bkgd, Bkgd,
-  chunkData, ChunkData,
-  chunk, Chunk,
-  png, Png
