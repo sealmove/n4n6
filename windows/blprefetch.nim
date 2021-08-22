@@ -20,13 +20,13 @@ proc lz77HuffmanPut(s: BitStream, input: seq[byte], size: uint32) =
 let lz77Huffman* = (get: lz77HuffmanGet, put: lz77HuffmanPut) 
 
 # 3 Compressed Prefetch file - MAM file format
-createParser(*mam, endian = l):
+struct(*mam, endian = l):
   s: _ = "MAM\x04"
   u32: *size
   *lz77Huffman(size): *data
 
 # 4.1 File header
-createParser(*header, endian = l):
+struct(*header, endian = l):
   u32: *version
   s: _ = "SCCA"
   u32: *unknown1
@@ -37,7 +37,7 @@ createParser(*header, endian = l):
   u32: *unknown2
 
 # 4.2 File information
-createParser(*fileInfo17, endian = l):
+struct(*fileInfo17, endian = l):
   u32: *fileMetricsOfs = 152
   u32: *fileMetricsEntries
   u32: *traceChainsOfs
@@ -52,7 +52,7 @@ createParser(*fileInfo17, endian = l):
   u32: *runCount
   u32: *unknown2
 
-createParser(*fileInfo23, endian = l):
+struct(*fileInfo23, endian = l):
   u32: *fileMetricsOfs = 240
   u32: *fileMetricsEntries
   u32: *traceChainsOfs
@@ -69,7 +69,7 @@ createParser(*fileInfo23, endian = l):
   u32: *unknown3
   u8: *unknown4[80]
 
-createParser(*fileInfo26, endian = l):
+struct(*fileInfo26, endian = l):
   u32: *fileMetricsOfs = 304
   u32: *fileMetricsEntries
   u32: *traceChainsOfs
@@ -87,7 +87,7 @@ createParser(*fileInfo26, endian = l):
   u32: *unknown4
   u8: *unknown5[88]
 
-createParser(*fileInfo30, endian = l):
+struct(*fileInfo30, endian = l):
   u32: *fileMetricsOfs = 296
   u32: *fileMetricsEntries
   u32: *traceChainsOfs
@@ -105,65 +105,65 @@ createParser(*fileInfo30, endian = l):
   u32: *unknown4
   u8: *unknown5[88]
 
-createVariantParser(*fileInfo, *version: PrefetchVersion):
-  (pv17): *fileInfo17: *fileInfo17
-  (pv23): *fileInfo23: *fileInfo23
-  (pv26): *fileInfo26: *fileInfo26
-  (pv30): *fileInfo30: *fileInfo30
+union(*fileInfo, *PrefetchVersion):
+  (pv17): *fileInfo17: *fi17
+  (pv23): *fileInfo23: *fi23
+  (pv26): *fileInfo26: *fi26
+  (pv30): *fileInfo30: *fi30
   _: nil
 
 proc fileMetricsOfs*(o: FileInfo): uint32 =
-  case o.version
-  of pv17: result = o.fileInfo17.fileMetricsOfs
-  of pv23: result = o.fileInfo23.fileMetricsOfs
-  of pv26: result = o.fileInfo26.fileMetricsOfs
-  of pv30: result = o.fileInfo30.fileMetricsOfs
+  case o.disc
+  of pv17: result = o.fi17.fileMetricsOfs
+  of pv23: result = o.fi23.fileMetricsOfs
+  of pv26: result = o.fi26.fileMetricsOfs
+  of pv30: result = o.fi30.fileMetricsOfs
   else: discard
 proc fileMetricsEntries*(o: FileInfo): uint32 =
-  case o.version
-  of pv17: result = o.fileInfo17.fileMetricsEntries
-  of pv23: result = o.fileInfo23.fileMetricsEntries
-  of pv26: result = o.fileInfo26.fileMetricsEntries
-  of pv30: result = o.fileInfo30.fileMetricsEntries
+  case o.disc
+  of pv17: result = o.fi17.fileMetricsEntries
+  of pv23: result = o.fi23.fileMetricsEntries
+  of pv26: result = o.fi26.fileMetricsEntries
+  of pv30: result = o.fi30.fileMetricsEntries
   else: discard
 proc traceChainsOfs*(o: FileInfo): uint32 =
-  case o.version
-  of pv17: result = o.fileInfo17.traceChainsOfs
-  of pv23: result = o.fileInfo23.traceChainsOfs
-  of pv26: result = o.fileInfo26.traceChainsOfs
-  of pv30: result = o.fileInfo30.traceChainsOfs
+  case o.disc
+  of pv17: result = o.fi17.traceChainsOfs
+  of pv23: result = o.fi23.traceChainsOfs
+  of pv26: result = o.fi26.traceChainsOfs
+  of pv30: result = o.fi30.traceChainsOfs
   else: discard
 proc traceChainsEntries*(o: FileInfo): uint32 =
-  case o.version
-  of pv17: result = o.fileInfo17.traceChainsEntries
-  of pv23: result = o.fileInfo23.traceChainsEntries
-  of pv26: result = o.fileInfo26.traceChainsEntries
-  of pv30: result = o.fileInfo30.traceChainsEntries
+  case o.disc
+  of pv17: result = o.fi17.traceChainsEntries
+  of pv23: result = o.fi23.traceChainsEntries
+  of pv26: result = o.fi26.traceChainsEntries
+  of pv30: result = o.fi30.traceChainsEntries
   else: discard
 proc filenameStringsOfs*(o: FileInfo): uint32 =
-  case o.version
-  of pv17: result = o.fileInfo17.filenameStringsOfs
-  of pv23: result = o.fileInfo23.filenameStringsOfs
-  of pv26: result = o.fileInfo26.filenameStringsOfs
-  of pv30: result = o.fileInfo30.filenameStringsOfs
+  case o.disc
+  of pv17: result = o.fi17.filenameStringsOfs
+  of pv23: result = o.fi23.filenameStringsOfs
+  of pv26: result = o.fi26.filenameStringsOfs
+  of pv30: result = o.fi30.filenameStringsOfs
   else: discard
 proc filenameStringsSize*(o: FileInfo): uint32 =
-  case o.version
-  of pv17: result = o.fileInfo17.filenameStringsSize
-  of pv23: result = o.fileInfo23.filenameStringsSize
-  of pv26: result = o.fileInfo26.filenameStringsSize
-  of pv30: result = o.fileInfo30.filenameStringsSize
+  case o.disc
+  of pv17: result = o.fi17.filenameStringsSize
+  of pv23: result = o.fi23.filenameStringsSize
+  of pv26: result = o.fi26.filenameStringsSize
+  of pv30: result = o.fi30.filenameStringsSize
   else: discard
 
 # 4.3 File metrics array
-createParser(*fileMetric17, endian = l):
+struct(*fileMetric17, endian = l):
   u32: *unknown1
   u32: *unknown2
   u32: *filenameStringsOfs
   u32: *filenameStringsChars
   u32: *unknown3
 
-createParser(*fileMetric23, endian = l):
+struct(*fileMetric23, endian = l):
   u32: *unknown1
   u32: *unknown2
   u32: *unknown3
@@ -172,42 +172,44 @@ createParser(*fileMetric23, endian = l):
   u32: *unknown4
   u64: *fileRef
 
-createVariantParser(*fileMetric, *version: PrefetchVersion):
-  (pv17): *fileMetric17: *fileMetric17
-  _: *fileMetric23: *fileMetric23
+union(*fileMetric, *PrefetchVersion):
+  (pv17): *fileMetric17: *fm17
+  _: *fileMetric23: *fm23
 
 # 4.4 Trace chains array
-createParser(*traceChain17, endian = l):
+struct(*traceChain17, endian = l):
   u32: *nextIndex
   u32: *blocksLoaded
   u8: *unknown1
   u8: *unknown2
   u16: *unknown3
 
-createParser(*traceChain30, endian = l):
+struct(*traceChain30, endian = l):
   u32: *blocksLoaded
   u8: *unknown1
   u8: *unknown2
   u16: *unknown3
 
-createVariantParser(*traceChain, *version: PrefetchVersion):
-  (pv17): *traceChain17: *traceChain17
-  _: *traceChain30: *traceChain30
+union(*traceChain, *PrefetchVersion):
+  (pv17): *traceChain17: *tc17
+  _: *traceChain30: *tc30
 
 # 4.5 Filename strings
-createParser(*filenameString, endian = l):
+struct(*filenameString, endian = l):
   u16: *str{_ == 0 or s.atEnd}
 
-createParser(*filenameStrings):
+struct(*filenameStrings):
   *filenameString: *strs{s.atEnd}
 
 # 4 Uncompressed Prefetch file
-createParser(prefetch, endian = l):
+struct(prefetch, endian = l):
   *header: *prefetchHeader
-  *fileInfo(prefetchHeader.version.PrefetchVersion): *info
-  *fileMetric(prefetchHeader.version.PrefetchVersion) {
-    pos: info.fileMetricsOfs.int}: *fileMetrics[info.fileMetricsEntries]
-  *traceChain(prefetchHeader.version.PrefetchVersion) {
-    pos: info.traceChainsOfs.int}: *traceChains[info.traceChainsEntries]
-  *filenameStrings {pos: info.filenameStringsOfs.int}:
+  +fileInfo(prefetchHeader.version.PrefetchVersion): *info
+  +fileMetric(prefetchHeader.version.PrefetchVersion) {
+    pos(info.fileMetricsOfs.int)
+  }: *fileMetrics[info.fileMetricsEntries]
+  +traceChain(prefetchHeader.version.PrefetchVersion) {
+    pos(info.traceChainsOfs.int)
+  }: *traceChains[info.traceChainsEntries]
+  *filenameStrings {pos(info.filenameStringsOfs.int)}:
     *filenames(info.filenameStringsSize.int)

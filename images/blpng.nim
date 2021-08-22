@@ -28,7 +28,7 @@ type
   CompressionMethodKind* = enum
     cmkZlib
 
-createParser(*ihdrChuck):
+struct(*ihdrChuck):
   u32: *width
   u32: *height
   u8: *bitDepth
@@ -37,19 +37,19 @@ createParser(*ihdrChuck):
   u8: *filterMethod
   u8: *interlaceMethod
 
-createParser(*rgb):
+struct(*rgb):
   u8: *r
   u8: *g
   u8: *b
 
-createParser(*point):
+struct(*point):
   u32: *x
   u32: *y
 
-createParser(*plteChuck):
+struct(*plteChuck):
   *rgb: *pixels{s.atEnd}
 
-createVariantParser(*bkgd, *color: ColorKind):
+union(*bkgd, *ColorKind):
   (ckGreyscale, ckGreyscaleAlpha):
     u16: *greyscale
   (ckTruecolor, ckTruecolorAlpha):
@@ -59,7 +59,7 @@ createVariantParser(*bkgd, *color: ColorKind):
   (ckIndexed):
     u8: *paletteIndex
 
-createVariantParser(*chunkData, *typ: ChunkKind, color: ColorKind):
+union(*chunkData, *ChunkKind, color: ColorKind):
   (ckPlte):
     *rgb: *entries{s.atEnd}
   (ckIdat):
@@ -72,13 +72,13 @@ createVariantParser(*chunkData, *typ: ChunkKind, color: ColorKind):
   (ckGama):
     u32: *gammaInt
   (ckIccp):
-    s {valid: _.len < 80}: *profileName
+    s {valid(_.len < 80)}: *profileName
     u8: *compressionMethod
     u8: *compressedProfile{s.atEnd}
   (ckSrgb):
     u8: *renderIntent
   (ckBkgd):
-    *bkgd(color): *bkgd
+    +bkgd(color): *background
   (ckPhys):
     u32: *pixelsPerUnitX
     u32: *pixelsPerUnitY
@@ -105,13 +105,13 @@ createVariantParser(*chunkData, *typ: ChunkKind, color: ColorKind):
     u8: *compressedText{s.atEnd}
   (ckIend): nil
 
-createParser(*chunk, color: ColorKind):
+struct(*chunk, color: ColorKind):
   u32: *len
   s: *typ(4)
-  *chunkData(parseEnum[ChunkKind](typ), color): *body(len)
+  +chunkData(parseEnum[ChunkKind](typ), color): *body(len)
   u32: *crc
 
-createParser(*png):
+struct(*png):
   s: _ = "\x89\x50\x4E\x47\x0D\x0A\x1A\x0A"
   s: _ = "\0\0\0\r"
   s: _ = "IHDR"

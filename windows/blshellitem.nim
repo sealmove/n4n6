@@ -2,7 +2,7 @@
 
 import binarylang, binarylang/plugins
 
-createParser(*fileAttributesFlagsLow, bitEndian = r):
+struct(*fileAttributesFlagsLow, bitEndian = r):
   1: *readonly
   1: *hidden
   1: *system
@@ -20,28 +20,28 @@ createParser(*fileAttributesFlagsLow, bitEndian = r):
   1: *encrypted
   1: *integrityStream
 
-createParser(*fileAttributesFlagsHigh, bitEndian = r):
+struct(*fileAttributesFlagsHigh, bitEndian = r):
   1: *virtual
   1: *noScrubData
   14: _
 
-createParser(*fileAttributesFlags):
+struct(*fileAttributesFlags):
   *fileAttributesFlagsLow: *low
   *fileAttributesFlagsHigh: *high
 
 # 6.4 Extension block 0xbeef0003
-createParser(*extensionBlock0xbeef0003):
+struct(*extensionBlock0xbeef0003):
   u16: *size
   u16: *version
   u32: *signature = 0xBEEF0003'u32
   b16: *shellFolderId
   u16: *offset
 
-createParser(*fatTime, endian = l):
+struct(*fatTime, endian = l):
   u16: *low
   u16: *high
 
-createParser(*clsId):
+struct(*clsId):
   lu32: *part1
   lu16: *part2
   lu16: *part3
@@ -60,31 +60,31 @@ type SortIndex* = enum
   siMyGames = (0x80, "My Games")
 
 # 3.2 Root folder shell item
-createParser(*rootFolderShellItem):
+struct(*rootFolderShellItem):
   u8: *sortIndex
   *clsId: *shellFolderId
 
 # 3.3 Volume shell item
-createParser(*volumeShellItem, clsTypeId: byte):
-  u8 {cond: bool(clsTypeId and 0x1)}: *flags
+struct(*volumeShellItem, clsTypeId: byte):
+  u8 {cond(bool(clsTypeId and 0x1))}: *flags
 
 # 3.4 File entry shell item
-createParser(*fileEntryShellItem, endian = l, clsTypeId: byte):
+struct(*fileEntryShellItem, endian = l, clsTypeId: byte):
   8: _ = 0
   u32: *fileSize
   *fatTime: *writeTime
   *fileAttributesFlagsLow: *fileAttributeFlags
-  s {cond: (clsTypeId and 0x04) == 0}: *primaryName
-  u16 {cond: (clsTypeId and 0x04) == 1}: *primaryNameUnicode{_ == 0}
+  s {cond((clsTypeId and 0x04) == 0)}: *primaryName
+  u16 {cond((clsTypeId and 0x04) == 1)}: *primaryNameUnicode{_ == 0}
 
 # 2.1 Shell Item
-createVariantParser(*shellItemData, *code: byte):
+union(*shellItemData, *byte):
   (0x10): *rootFolderShellItem: *rootFolder
-  (0x20): *volumeShellItem(code): *volume
-  (0x30): *fileEntryShellItem(code): *fileEntry
+  (0x20): *volumeShellItem(disc): *volume
+  (0x30): *fileEntryShellItem(disc): *fileEntry
   _: nil
 
-createParser(*shellItem, endian = l):
+struct(*shellItem, endian = l):
   u16: *size
   u8: *clsTypeId
-  *shellItemData(clsTypeId and 0x70): *data(size - 3)
+  +shellItemData(clsTypeId and 0x70): *data(size - 3)
